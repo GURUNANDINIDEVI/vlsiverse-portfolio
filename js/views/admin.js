@@ -1,3 +1,4 @@
+let activeAdminTab = "users";
 let adminUnlockedInSession = sessionStorage.getItem("vlsi_admin_unlocked") === "true";
 
 window.renderAdmin = function() {

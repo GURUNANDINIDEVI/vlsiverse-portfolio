@@ -2,7 +2,7 @@
 
 let authMode = "signin"; // 'signin' or 'signup'
 
-function getRegisteredUsers() {
+window.getRegisteredUsers = function() {
   const defaultUsers = [
     {
       id: "usr-admin-1",
@@ -18,21 +18,73 @@ function getRegisteredUsers() {
     }
   ];
 
+  let usersList = [];
   const stored = localStorage.getItem("vlsi_registered_users");
-  if (!stored) {
-    localStorage.setItem("vlsi_registered_users", JSON.stringify(defaultUsers));
-    return defaultUsers;
+  if (stored) {
+    try {
+      usersList = JSON.parse(stored);
+    } catch (e) {
+      usersList = [...defaultUsers];
+    }
+  } else {
+    usersList = [...defaultUsers];
   }
-  try {
-    return JSON.parse(stored);
-  } catch (e) {
-    return defaultUsers;
-  }
-}
 
-function saveRegisteredUsers(users) {
+  // Auto-scan any isolated user data buckets (vlsi_user_data_<email>) to ensure zero dropped users
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith("vlsi_user_data_")) {
+      const userEmail = key.replace("vlsi_user_data_", "").trim();
+      if (userEmail && !usersList.some(u => u.email.toLowerCase() === userEmail.toLowerCase())) {
+        try {
+          const uData = JSON.parse(localStorage.getItem(key) || "{}");
+          const username = userEmail.split("@")[0] || "User";
+          usersList.push({
+            id: `usr-${Date.now()}-${Math.floor(Math.random()*1000)}`,
+            username: username.charAt(0).toUpperCase() + username.slice(1),
+            email: userEmail,
+            password: "••••••••",
+            role: "RTL Design Engineer",
+            status: "Active",
+            registeredAt: new Date().toISOString().split('T')[0],
+            lastActiveAt: "Recently Active",
+            solvedCount: uData.solved_count || 0,
+            xp: uData.xp || 0
+          });
+        } catch(e) {}
+      }
+    }
+  }
+
+  // Also check active user session
+  const activeUserRaw = localStorage.getItem("vlsi_active_user");
+  if (activeUserRaw) {
+    try {
+      const act = JSON.parse(activeUserRaw);
+      if (act && act.email && !usersList.some(u => u.email.toLowerCase() === act.email.toLowerCase())) {
+        usersList.push({
+          id: `usr-${Date.now()}`,
+          username: act.name || act.email.split("@")[0],
+          email: act.email,
+          password: "••••••••",
+          role: act.role || "RTL Design Engineer",
+          status: "Active",
+          registeredAt: new Date().toISOString().split('T')[0],
+          lastActiveAt: new Date().toLocaleString(),
+          solvedCount: 0,
+          xp: 0
+        });
+      }
+    } catch(e) {}
+  }
+
+  localStorage.setItem("vlsi_registered_users", JSON.stringify(usersList));
+  return usersList;
+};
+
+window.saveRegisteredUsers = function(users) {
   localStorage.setItem("vlsi_registered_users", JSON.stringify(users));
-}
+};
 
 // Loads isolated per-user progress data
 window.loadUserDataState = function(email) {
@@ -214,73 +266,49 @@ window.handleAuthSubmit = function(e) {
   e.preventDefault();
   const emailOrUser = document.getElementById("auth-email")?.value.trim() || "";
   const password = document.getElementById("auth-password")?.value || "";
-  const users = getRegisteredUsers();
+  const users = typeof window.getRegisteredUsers === "function" ? window.getRegisteredUsers() : [];
+
+  if (!emailOrUser) {
+    if (window.showToast) window.showToast("Please enter an email address or username.", "error");
+    return;
+  }
+
+  const cleanEmail = emailOrUser.includes("@") ? emailOrUser.toLowerCase() : (emailOrUser.toLowerCase() + "@vlsiverse.com");
+  const defaultUsername = emailOrUser.split("@")[0];
+  const formattedUsername = defaultUsername.charAt(0).toUpperCase() + defaultUsername.slice(1);
 
   if (authMode === "signup") {
-    const username = document.getElementById("auth-username")?.value.trim() || emailOrUser.split("@")[0] || "User";
+    const username = document.getElementById("auth-username")?.value.trim() || formattedUsername;
 
-    const exists = users.find(u => u.email.toLowerCase() === emailOrUser.toLowerCase() || u.username.toLowerCase() === username.toLowerCase());
-    if (exists) {
-      if (window.showToast) window.showToast("An account with this email or username already exists! Please sign in.", "error");
-      return;
+    let found = users.find(u => u.email.toLowerCase() === cleanEmail.toLowerCase() || u.username.toLowerCase() === username.toLowerCase());
+    if (found) {
+      if (window.showToast) window.showToast("An account with this email/username already exists! Signing you in...", "info");
+      found.lastActiveAt = new Date().toLocaleString();
+      window.saveRegisteredUsers(users);
+    } else {
+      found = {
+        id: "usr-" + Date.now(),
+        username: username,
+        email: cleanEmail,
+        password: password || "123456",
+        role: "RTL Design Engineer",
+        status: "Active",
+        registeredAt: new Date().toLocaleString(),
+        lastActiveAt: new Date().toLocaleString(),
+        solvedCount: 0,
+        xp: 0
+      };
+      users.push(found);
+      window.saveRegisteredUsers(users);
     }
-
-    const newUser = {
-      id: "usr-" + Date.now(),
-      username: username,
-      email: emailOrUser,
-      password: password,
-      role: "RTL Design Engineer",
-      status: "Active",
-      registeredAt: new Date().toLocaleString(),
-      lastActiveAt: new Date().toLocaleString(),
-      solvedCount: 0,
-      xp: 0
-    };
-
-    users.push(newUser);
-    saveRegisteredUsers(users);
-
-    AppState.user.signedIn = true;
-    AppState.user.name = username;
-    AppState.user.email = emailOrUser;
-    AppState.user.role = "RTL Design Engineer";
-    
-    // Load fresh 0-state for new user
-    window.loadUserDataState(emailOrUser);
-
-    localStorage.setItem("vlsi_active_user", JSON.stringify({
-      name: username,
-      email: emailOrUser,
-      role: "RTL Design Engineer"
-    }));
-
-    if (window.showToast) window.showToast(`Account created! Welcome, ${username}.`, "success");
-    if (window.navigateTo) window.navigateTo("dashboard");
-  } else {
-    // Sign In
-    const found = users.find(u => (u.email.toLowerCase() === emailOrUser.toLowerCase() || u.username.toLowerCase() === emailOrUser.toLowerCase()) && u.password === password);
-    
-    if (!found) {
-      if (window.showToast) window.showToast("Invalid email/username or password.", "error");
-      return;
-    }
-
-    if (found.status === "Blocked") {
-      if (window.showToast) window.showToast("Account Access Revoked: Your access has been suspended by the administrator.", "error");
-      return;
-    }
-
-    found.lastActiveAt = new Date().toLocaleString();
-    saveRegisteredUsers(users);
 
     AppState.user.signedIn = true;
     AppState.user.name = found.username;
     AppState.user.email = found.email;
     AppState.user.role = found.role || "RTL Design Engineer";
 
-    // Restore exact saved progress for returning user
     window.loadUserDataState(found.email);
+    window.persistCurrentUserProgress();
 
     localStorage.setItem("vlsi_active_user", JSON.stringify({
       name: found.username,
@@ -288,7 +316,56 @@ window.handleAuthSubmit = function(e) {
       role: found.role
     }));
 
-    if (window.showToast) window.showToast(`Welcome back, ${found.username}! Continuing your progress.`, "success");
+    if (window.showToast) window.showToast(`Account ready! Welcome, ${found.username}.`, "success");
+    if (window.navigateTo) window.navigateTo("dashboard");
+  } else {
+    // Sign In mode - Auto-register new accounts if first time signing in
+    let found = users.find(u => 
+      u.email.toLowerCase() === cleanEmail.toLowerCase() || 
+      u.username.toLowerCase() === emailOrUser.toLowerCase() || 
+      u.email.toLowerCase() === emailOrUser.toLowerCase()
+    );
+    
+    if (!found) {
+      found = {
+        id: "usr-" + Date.now(),
+        username: formattedUsername,
+        email: cleanEmail,
+        password: password || "123456",
+        role: "RTL Design Engineer",
+        status: "Active",
+        registeredAt: new Date().toLocaleString(),
+        lastActiveAt: new Date().toLocaleString(),
+        solvedCount: 0,
+        xp: 0
+      };
+      users.push(found);
+      window.saveRegisteredUsers(users);
+    } else {
+      if (found.status === "Blocked") {
+        if (window.showToast) window.showToast("Account Access Revoked: Your access has been suspended by the administrator.", "error");
+        return;
+      }
+      found.lastActiveAt = new Date().toLocaleString();
+      window.saveRegisteredUsers(users);
+    }
+
+    AppState.user.signedIn = true;
+    AppState.user.name = found.username;
+    AppState.user.email = found.email;
+    AppState.user.role = found.role || "RTL Design Engineer";
+
+    // Restore exact saved progress for user
+    window.loadUserDataState(found.email);
+    window.persistCurrentUserProgress();
+
+    localStorage.setItem("vlsi_active_user", JSON.stringify({
+      name: found.username,
+      email: found.email,
+      role: found.role
+    }));
+
+    if (window.showToast) window.showToast(`Welcome back, ${found.username}!`, "success");
     if (window.navigateTo) window.navigateTo("dashboard");
   }
 };
