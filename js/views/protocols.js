@@ -239,14 +239,9 @@ window.renderProtocols = function() {
         <div class="glass-panel p-6 rounded-2xl border-white/5 flex flex-col gap-3">
           <div class="flex justify-between items-center flex-wrap gap-2">
             <span class="text-[10px] text-blue-400 font-bold uppercase tracking-widest font-mono bg-blue-950/50 px-2.5 py-0.5 rounded border border-blue-500/20">${current.type}</span>
-            <div class="flex items-center gap-3">
-              <button onclick="openProtocolHandbookModal(1)" class="px-3.5 py-1.5 bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-heading font-bold text-xs rounded-xl shadow-lg shadow-cyan-500/20 transition-all hover:scale-105 flex items-center gap-2">
-                <i class="fa-solid fa-book-open text-xs"></i> 📖 Open 6-Page Protocol Master Handbook
-              </button>
-              <span class="text-[10px] text-purple-400 font-mono flex items-center gap-1.5">
-                <i class="fa-solid fa-trophy text-amber-400"></i> Mastery XP: <strong class="text-white font-bold">${protocolQuestionStats.correct * 15} pts</strong>
-              </span>
-            </div>
+            <span class="text-[10px] text-purple-400 font-mono flex items-center gap-1.5">
+              <i class="fa-solid fa-trophy text-amber-400"></i> Mastery XP: <strong class="text-white font-bold">${protocolQuestionStats.correct * 15} pts</strong>
+            </span>
           </div>
           <h2 class="text-xl font-heading font-extrabold text-white flex items-center gap-2">${current.name}</h2>
           <p class="text-xs text-gray-300 leading-relaxed bg-slate-950/40 p-4 rounded-xl border border-white/5">${current.overview}</p>
