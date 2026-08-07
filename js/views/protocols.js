@@ -182,7 +182,25 @@ window.renderProtocols = function() {
   const container = document.getElementById("view-container");
   if (!container) return;
 
-  const current = VLSIData.protocols[activeProtocolId] || VLSIData.protocols["apb"];
+  const protocolsMap = (typeof VLSIData !== "undefined" && VLSIData.protocols) ? VLSIData.protocols : {};
+  const availableKeys = Object.keys(protocolsMap);
+  const fallbackKey = availableKeys.length > 0 ? availableKeys[0] : "apb";
+
+  if (!protocolsMap[activeProtocolId] && availableKeys.length > 0) {
+    activeProtocolId = fallbackKey;
+  }
+
+  const current = protocolsMap[activeProtocolId] || {
+    name: "AMBA APB",
+    type: "Control Bus",
+    overview: "Advanced Peripheral Bus for low-power SoC peripheral access.",
+    detailedDescription: "Unpipelined 2-phase bus interface optimized for low power.",
+    handshakeArchitecture: "PSEL -> PENABLE -> PREADY transition.",
+    burstAndFlowControl: "Single 2-cycle transfer per access.",
+    errorHandling: "PSLVERR flag handling.",
+    useCases: "Used widely across microcontroller units (MCUs) and SoC peripheral modules.",
+    signals: []
+  };
 
   // Initialize question if needed
   if (!currentProtocolQuestion || currentProtocolQuestion.protocolId !== activeProtocolId) {
@@ -663,6 +681,19 @@ function getProtocolHandbookData(id, current) {
 }
 
 function renderHandbookPageContent(pageNo, protoId, current, mathData) {
+  if (!current) {
+    const protocolsMap = (typeof VLSIData !== "undefined" && VLSIData.protocols) ? VLSIData.protocols : {};
+    current = protocolsMap[protoId] || protocolsMap["apb"] || {
+      name: "AMBA APB",
+      overview: "Advanced Peripheral Bus standard.",
+      useCases: "Used extensively across mobile SoCs, GPUs, microcontrollers, and automotive ECUs.",
+      signals: []
+    };
+  }
+  if (!mathData) {
+    mathData = getProtocolHandbookData(protoId, current);
+  }
+
   if (pageNo === 1) {
     return `
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -670,10 +701,10 @@ function renderHandbookPageContent(pageNo, protoId, current, mathData) {
           <h3 class="text-sm font-heading font-extrabold text-cyan-400 uppercase tracking-widest flex items-center gap-2">
             <i class="fa-solid fa-sitemap"></i> Protocol Architecture &amp; Topologies
           </h3>
-          <p class="text-gray-300 leading-relaxed">${current.detailedDescription || current.overview}</p>
+          <p class="text-gray-300 leading-relaxed">${current.detailedDescription || current.overview || ""}</p>
           <div class="p-3 bg-slate-950 rounded-xl border border-white/5 font-mono text-[11px] text-cyan-300 mt-2">
-            <strong>Target Standard:</strong> ${current.type}<br>
-            <strong>Bus Topology:</strong> ${current.name} Master-Slave Interconnect Infrastructure
+            <strong>Target Standard:</strong> ${current.type || "Bus Standard"}<br>
+            <strong>Bus Topology:</strong> ${current.name || "Protocol"} Master-Slave Interconnect Infrastructure
           </div>
         </div>
 
@@ -681,20 +712,21 @@ function renderHandbookPageContent(pageNo, protoId, current, mathData) {
           <h3 class="text-sm font-heading font-extrabold text-purple-400 uppercase tracking-widest flex items-center gap-2">
             <i class="fa-solid fa-star"></i> Protocol Significance &amp; Engineering Role
           </h3>
-          <p class="text-gray-300 leading-relaxed">${current.overview}</p>
+          <p class="text-gray-300 leading-relaxed">${current.overview || ""}</p>
           <div class="p-3 bg-slate-950 rounded-xl border border-white/5 font-mono text-[11px] text-purple-300 mt-2">
-            <strong>Physical Interface Pins:</strong> ${mathData.pinCount}
+            <strong>Physical Interface Pins:</strong> ${mathData.pinCount || "Multi-pin interface"}
           </div>
         </div>
       </div>
     `;
   } else if (pageNo === 2) {
+    const signalsArr = current.signals || [];
     return `
       <div class="flex flex-col gap-4">
         <h3 class="text-sm font-heading font-extrabold text-white uppercase tracking-widest flex items-center gap-2">
-          <i class="fa-solid fa-handshake"></i> ${current.name} Signal Matrix &amp; Handshake Mapping
+          <i class="fa-solid fa-handshake"></i> ${current.name || "Protocol"} Signal Matrix &amp; Handshake Mapping
         </h3>
-        <p class="text-gray-400 text-xs">Complete signal direction, bit-widths, and handshake semantics for ${current.name}.</p>
+        <p class="text-gray-400 text-xs">Complete signal direction, bit-widths, and handshake semantics for ${current.name || "Protocol"}.</p>
         
         <div class="overflow-x-auto bg-slate-900/60 rounded-2xl border border-white/5 p-4">
           <table class="w-full text-left text-xs border-collapse">
@@ -706,7 +738,7 @@ function renderHandbookPageContent(pageNo, protoId, current, mathData) {
               </tr>
             </thead>
             <tbody class="divide-y divide-white/5 font-sans">
-              ${current.signals.map(s => `
+              ${signalsArr.map(s => `
                 <tr class="hover:bg-slate-950/40">
                   <td class="py-2.5 px-3 font-mono text-cyan-300 font-bold">${s.name}</td>
                   <td class="py-2.5 px-3 font-mono text-purple-300 font-bold">${s.dir}</td>
@@ -722,35 +754,35 @@ function renderHandbookPageContent(pageNo, protoId, current, mathData) {
     return `
       <div class="flex flex-col gap-6">
         <h3 class="text-sm font-heading font-extrabold text-cyan-400 uppercase tracking-widest flex items-center gap-2">
-          <i class="fa-solid fa-calculator"></i> ${current.name} Protocol Formulas &amp; Bandwidth Calculations
+          <i class="fa-solid fa-calculator"></i> ${current.name || "Protocol"} Protocol Formulas &amp; Bandwidth Calculations
         </h3>
-        <p class="text-gray-300 leading-relaxed">Unique mathematical equations governing throughput, latency bounds, frequency scaling, and bus efficiency for ${current.name}.</p>
+        <p class="text-gray-300 leading-relaxed">Unique mathematical equations governing throughput, latency bounds, frequency scaling, and bus efficiency for ${current.name || "Protocol"}.</p>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="p-4 bg-slate-900/80 rounded-2xl border border-cyan-500/30 flex flex-col gap-2 font-mono">
             <strong class="text-cyan-300 text-xs uppercase">⚡ Bandwidth Equation:</strong>
-            <p class="text-white text-xs bg-slate-950 p-3 rounded-xl border border-white/5">${mathData.bandwidthFormula}</p>
+            <p class="text-white text-xs bg-slate-950 p-3 rounded-xl border border-white/5">${mathData.bandwidthFormula || ""}</p>
           </div>
 
           <div class="p-4 bg-slate-900/80 rounded-2xl border border-purple-500/30 flex flex-col gap-2 font-mono">
             <strong class="text-purple-300 text-xs uppercase">⏱️ Operating Frequency Range:</strong>
-            <p class="text-white text-xs bg-slate-950 p-3 rounded-xl border border-white/5">${mathData.freqRange}</p>
+            <p class="text-white text-xs bg-slate-950 p-3 rounded-xl border border-white/5">${mathData.freqRange || ""}</p>
           </div>
 
           <div class="p-4 bg-slate-900/80 rounded-2xl border border-emerald-500/30 flex flex-col gap-2 font-mono">
             <strong class="text-emerald-300 text-xs uppercase">📊 Latency &amp; Transfer Equation:</strong>
-            <p class="text-white text-xs bg-slate-950 p-3 rounded-xl border border-white/5">${mathData.latencyFormula}</p>
+            <p class="text-white text-xs bg-slate-950 p-3 rounded-xl border border-white/5">${mathData.latencyFormula || ""}</p>
           </div>
 
           <div class="p-4 bg-slate-900/80 rounded-2xl border border-amber-500/30 flex flex-col gap-2 font-mono">
             <strong class="text-amber-300 text-xs uppercase">📈 Bus Efficiency Calculation:</strong>
-            <p class="text-white text-xs bg-slate-950 p-3 rounded-xl border border-white/5">${mathData.efficiencyMath}</p>
+            <p class="text-white text-xs bg-slate-950 p-3 rounded-xl border border-white/5">${mathData.efficiencyMath || ""}</p>
           </div>
         </div>
 
         <div class="p-4 bg-slate-950 rounded-2xl border border-white/10 flex flex-col gap-2">
           <strong class="text-cyan-400 font-mono text-xs">📐 Precise Timing Phase Equation:</strong>
-          <code class="text-emerald-400 font-mono text-xs bg-slate-900 p-3 rounded-xl block">${mathData.timingEquation}</code>
+          <code class="text-emerald-400 font-mono text-xs bg-slate-900 p-3 rounded-xl block">${mathData.timingEquation || ""}</code>
         </div>
       </div>
     `;
@@ -764,7 +796,7 @@ function renderHandbookPageContent(pageNo, protoId, current, mathData) {
         
         <div class="p-5 bg-slate-900/60 rounded-2xl border border-white/5 flex flex-col gap-3 font-mono text-xs">
           <strong class="text-purple-300">State Machine Flow:</strong>
-          <p class="text-gray-300 font-sans leading-relaxed">${current.handshakeArchitecture || current.overview}</p>
+          <p class="text-gray-300 font-sans leading-relaxed">${current.handshakeArchitecture || current.overview || ""}</p>
         </div>
       </div>
     `;
@@ -792,7 +824,7 @@ function renderHandbookPageContent(pageNo, protoId, current, mathData) {
 
         <div class="p-4 bg-slate-900/60 rounded-2xl border border-white/5 flex flex-col gap-2">
           <strong class="text-emerald-300 font-mono text-xs">Interview Pro Tip:</strong>
-          <p class="text-gray-300 text-xs font-sans">Focus on explaining the ready/valid handshake, burst mode parameters, and latency bounds for ${current.name} during DV technical rounds!</p>
+          <p class="text-gray-300 text-xs font-sans">Focus on explaining the ready/valid handshake, burst mode parameters, and latency bounds for ${current.name || "this protocol"} during DV technical rounds!</p>
         </div>
       </div>
     `;
