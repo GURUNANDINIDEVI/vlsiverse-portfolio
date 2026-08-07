@@ -47,8 +47,8 @@ window.renderLearn = function() {
 
       <!-- Core Description & Brief Notes Area -->
       <div class="lg:col-span-3 flex flex-col gap-6">
-        <!-- Topic Header Banner with 6-Page Handbook Button -->
-        <div class="glass-panel p-6 rounded-2xl border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gradient-to-r from-slate-900/90 via-blue-950/30 to-slate-900/90">
+        <!-- Topic Header Banner -->
+        <div class="glass-panel p-6 rounded-2xl border-white/5 flex flex-col justify-between items-start gap-3 bg-gradient-to-r from-slate-900/90 via-blue-950/30 to-slate-900/90">
           <div>
             <div class="flex items-center gap-2 mb-1">
               <span class="text-[9px] text-blue-400 font-bold uppercase tracking-widest font-mono bg-blue-950/60 border border-blue-500/30 px-2.5 py-0.5 rounded">Silicon Engineering</span>
@@ -56,14 +56,6 @@ window.renderLearn = function() {
             </div>
             <h2 class="text-2xl font-heading font-extrabold text-white">${currentTopic.title}</h2>
             <p class="text-xs text-gray-400 font-sans leading-relaxed">${currentTopic.description || ""}</p>
-          </div>
-          
-          <!-- SINGLE ACTION BUTTON TO OPEN THE 6-PAGE HANDBOOK -->
-          <div class="flex items-center gap-3 shrink-0">
-            <button onclick="openTopicHandbook('${activeTopicId}')" class="px-5 py-3 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-heading font-extrabold shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-all flex items-center gap-2.5 border border-purple-400/30 group">
-              <i class="fa-solid fa-book-bookmark text-sm text-amber-300 group-hover:scale-110 transition-transform"></i>
-              <span>Open Full 6-Page Handbook 📖</span>
-            </button>
           </div>
         </div>
 
