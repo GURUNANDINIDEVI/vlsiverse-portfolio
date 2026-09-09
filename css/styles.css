@@ -1,7 +1,5 @@
 /* VLSIVerse Custom CSS Stylesheet - Restructured UI */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@300;400;500;600&display=swap');
-
 :root {
   --bg-primary: #05070f;
   --bg-secondary: #0b0f19;
@@ -26,6 +24,45 @@ body {
 h1, h2, h3, h4, h5, h6, .font-heading {
   font-family: 'Inter', sans-serif;
   letter-spacing: 0.02em; /* Prevents characters from squeezing */
+}
+
+/* Monaco Editor Strict Font & Mouse Pointer Reset */
+#monaco-workspace-container {
+  position: relative !important;
+  width: 100% !important;
+  isolation: isolate;
+  contain: content;
+}
+
+.monaco-editor {
+  position: relative !important;
+  width: 100% !important;
+}
+
+.monaco-editor .view-lines,
+.monaco-editor .view-overlays,
+.monaco-editor .margin-view-overlays {
+  letter-spacing: 0px !important;
+  word-spacing: 0px !important;
+  font-variant-ligatures: none !important;
+}
+
+.monaco-editor,
+.monaco-editor *,
+.monaco-editor .view-line,
+.monaco-editor .view-lines,
+.monaco-editor .lines-content,
+.monaco-editor .margin,
+.monaco-editor .monaco-mouse-cursor-text,
+.monaco-editor [class*="mtk"],
+.monaco-editor span {
+  font-family: Consolas, 'Courier New', monospace !important;
+  font-size: 13px !important;
+  line-height: 20px !important;
+  letter-spacing: 0px !important;
+  word-spacing: 0px !important;
+  font-variant-ligatures: none !important;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Glassmorphism Panels */
@@ -332,5 +369,73 @@ h1, h2, h3, h4, h5, h6, .font-heading {
 
 .cta-glow-pulse {
   animation: ctaGlow 6s infinite ease-in-out;
+}
+
+/* Mobile & Touch Responsive Optimization Rules */
+@media (pointer: coarse) {
+  #custom-cursor-dot,
+  #custom-cursor-ring {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  #monaco-workspace-container {
+    height: 320px !important;
+  }
+  .glass-panel {
+    padding: 1rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    font-size: 14px !important;
+  }
+  h1 {
+    font-size: 1.85rem !important;
+    line-height: 2.2rem !important;
+  }
+  #monaco-workspace-container {
+    height: 280px !important;
+  }
+}
+
+/* Accessible Focus States for Keyboard Navigation */
+:focus-visible {
+  outline: 2px solid #3b82f6 !important;
+  outline-offset: 2px !important;
+  border-radius: 6px;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid #3b82f6 !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3) !important;
+}
+
+/* Reduced Motion Preference Strategy */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .animate-pulse,
+  .text-shimmer,
+  .premium-btn-unified,
+  .daily-challenge-glow,
+  .cta-glow-pulse,
+  .premium-card-lift:hover {
+    animation: none !important;
+    transform: none !important;
+  }
 }
 

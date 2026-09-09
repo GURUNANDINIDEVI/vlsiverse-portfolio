@@ -35,7 +35,9 @@ window.renderProjects = function() {
         <!-- Project Header & Detailed Description -->
         <div class="glass-panel p-6 rounded-2xl border-white/5">
           <div class="flex items-center justify-between mb-2">
-            <span class="text-[10px] text-blue-400 font-bold uppercase tracking-widest font-mono">SoC Hardware Blueprint</span>
+            <span class="text-[10px] text-blue-400 font-bold uppercase tracking-widest font-mono flex items-center gap-2">
+              <i class="fa-solid fa-map-location-dot"></i> Guided Architectural Blueprint &amp; RTL Concept
+            </span>
             <span class="px-2.5 py-0.5 rounded-full border border-blue-500/25 bg-blue-950/40 text-[9px] font-bold text-blue-300 font-mono">${current.difficulty}</span>
           </div>
           <h2 class="text-2xl font-heading font-extrabold text-white">${current.title}</h2>

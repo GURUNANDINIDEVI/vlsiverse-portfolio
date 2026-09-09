@@ -7,8 +7,8 @@ let digitalPracticeState = {
   selectedDifficultyFilter: "All Difficulties",
   selectedStatusFilter: "All",
   userAnswers: {}, // questionId -> selectedOptionIdx
-  bookmarkedIds: new Set(JSON.parse(localStorage.getItem("vlsi_bookmarked_dp") || "[]")),
-  solvedIds: new Set(JSON.parse(localStorage.getItem("vlsi_solved_dp") || "[]")),
+  bookmarkedIds: new Set(),
+  solvedIds: new Set(),
   showHint: false,
   showSolution: false,
   timerSeconds: 900,
@@ -271,6 +271,15 @@ function getFilteredDigitalQuestions() {
 window.renderDigitalPractice = function() {
   const container = document.getElementById("view-container");
   if (!container) return;
+
+  if (typeof AppState !== "undefined" && AppState.user) {
+    if (AppState.user.bookmarked_dp_ids && digitalPracticeState.bookmarkedIds.size === 0) {
+      digitalPracticeState.bookmarkedIds = new Set(AppState.user.bookmarked_dp_ids);
+    }
+    if (AppState.user.solved_dp_ids && digitalPracticeState.solvedIds.size === 0) {
+      digitalPracticeState.solvedIds = new Set(AppState.user.solved_dp_ids);
+    }
+  }
 
   // Filter questions based on state
   let questions = getFilteredDigitalQuestions();
@@ -665,7 +674,12 @@ window.toggleDigitalBookmark = function(qId) {
     digitalPracticeState.bookmarkedIds.add(qId);
     showToast("Question saved to bookmarks!", "success");
   }
-  localStorage.setItem("vlsi_bookmarked_dp", JSON.stringify([...digitalPracticeState.bookmarkedIds]));
+  if (AppState.user) {
+    AppState.user.bookmarked_dp_ids = Array.from(digitalPracticeState.bookmarkedIds);
+  }
+  if (typeof persistCurrentUserProgress === "function") {
+    persistCurrentUserProgress();
+  }
   renderDigitalPractice();
 };
 

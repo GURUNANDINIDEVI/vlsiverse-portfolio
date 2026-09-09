@@ -441,55 +441,159 @@ window.openChallengeWorkspace = function(chId) {
 };
 
 window.closeChallengeWorkspace = function() {
+  const currentCode = getWorkspaceCodeValue();
+  if (selectedChallengeId && currentCode) {
+    currentCodeMap[selectedChallengeId] = currentCode;
+  }
   if (window.monacoWorkspaceInstance) {
-    const ch = VLSIData.challenges.find(c => c.id === selectedChallengeId);
-    if (ch) currentCodeMap[ch.id] = window.monacoWorkspaceInstance.getValue();
+    try {
+      window.monacoWorkspaceInstance.dispose();
+    } catch(e) {}
+    window.monacoWorkspaceInstance = null;
   }
   selectedChallengeId = null;
   renderPractice();
 };
 
+function getWorkspaceCodeValue() {
+  if (window.monacoWorkspaceInstance && typeof window.monacoWorkspaceInstance.getValue === 'function') {
+    return window.monacoWorkspaceInstance.getValue();
+  }
+  const fallback = document.getElementById("fallback-code-editor");
+  if (fallback) return fallback.value;
+  return "";
+}
+
 function initMonacoWorkspaceInstance(codeValue) {
   const container = document.getElementById("monaco-workspace-container");
   if (!container) return;
 
-  if (typeof window.monaco !== "undefined") {
-    createMonacoWorkspaceInstance(codeValue);
+  const currentCh = VLSIData.challenges.find(ch => ch.id === selectedChallengeId);
+  const initialCode = codeValue || currentCh?.starterCode || "// Write your Verilog module code here\n";
+
+  if (typeof window.monaco !== "undefined" && window.monaco.editor) {
+    createMonacoWorkspaceInstance(initialCode);
     return;
   }
+
+  // Provide interactive fallback textarea while CDN loads
+  container.innerHTML = `
+    <textarea id="fallback-code-editor" class="w-full h-full p-4 bg-[#0b0f19] text-emerald-400 font-mono text-xs focus:outline-none resize-none leading-relaxed border-0" placeholder="Type your Verilog code here...">${initialCode}</textarea>
+  `;
 
   if (!document.getElementById("monaco-loader")) {
     const loader = document.createElement("script");
     loader.id = "monaco-loader";
     loader.src = "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.39.0/min/vs/loader.min.js";
     loader.onload = () => {
-      require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.39.0/min/vs' } });
-      require(['vs/editor/editor.main'], () => {
-        createMonacoWorkspaceInstance(codeValue);
-      });
+      if (typeof require !== "undefined") {
+        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.39.0/min/vs' } });
+        require(['vs/editor/editor.main'], () => {
+          const fallback = document.getElementById("fallback-code-editor");
+          const val = fallback ? fallback.value : initialCode;
+          createMonacoWorkspaceInstance(val);
+        });
+      }
     };
     document.head.appendChild(loader);
+  } else {
+    const checkInterval = setInterval(() => {
+      if (typeof window.monaco !== "undefined" && window.monaco.editor) {
+        clearInterval(checkInterval);
+        const fallback = document.getElementById("fallback-code-editor");
+        const val = fallback ? fallback.value : initialCode;
+        createMonacoWorkspaceInstance(val);
+      }
+    }, 200);
   }
 }
 
 function createMonacoWorkspaceInstance(codeValue) {
   const container = document.getElementById("monaco-workspace-container");
   if (!container) return;
+
+  // Dispose previous editor instance to prevent cursor & pointer offset conflicts
+  if (window.monacoWorkspaceInstance) {
+    try {
+      window.monacoWorkspaceInstance.dispose();
+    } catch (e) {}
+    window.monacoWorkspaceInstance = null;
+  }
+
   container.innerHTML = "";
 
   window.monacoWorkspaceInstance = monaco.editor.create(container, {
-    value: codeValue,
+    value: codeValue || "",
     language: 'verilog',
     theme: 'vs-dark',
     automaticLayout: true,
-    fontSize: 12,
+    disableLayerHinting: true, // Prevents GPU translate3d sub-pixel drift between text and selection overlays!
+    fontSize: 13,
+    lineHeight: 20,
+    cursorBlinking: 'smooth',
+    cursorStyle: 'line',
+    cursorWidth: 2,
+    fontFamily: "Consolas, 'Courier New', monospace",
+    fontLigatures: false,
+    letterSpacing: 0,
+    renderLineHighlight: 'line',
+    scrollBeyondLastLine: false,
     minimap: { enabled: false },
-    fontFamily: "'Fira Code', monospace"
+    tabSize: 2,
+    wordWrap: "on",
+    roundedSelection: false,
+    fixedOverflowWidgets: true
   });
+
+  // Explicitly remeasure fonts so character widths match DOM 100%
+  if (typeof monaco !== "undefined" && monaco.editor && monaco.editor.remeasureFonts) {
+    try { monaco.editor.remeasureFonts(); } catch(e) {}
+  }
+
+  // Re-sync mouse pointer coordinates dynamically on pointer click/touch
+  container.addEventListener('pointerdown', () => {
+    if (window.monacoWorkspaceInstance) {
+      if (typeof monaco !== "undefined" && monaco.editor && monaco.editor.remeasureFonts) {
+        try { monaco.editor.remeasureFonts(); } catch(e) {}
+      }
+      window.monacoWorkspaceInstance.layout();
+    }
+  });
+
+  // Double-pass layout calculation for instant adaptable pointer placement
+  requestAnimationFrame(() => {
+    if (window.monacoWorkspaceInstance) {
+      if (typeof monaco !== "undefined" && monaco.editor && monaco.editor.remeasureFonts) {
+        try { monaco.editor.remeasureFonts(); } catch(e) {}
+      }
+      window.monacoWorkspaceInstance.layout();
+      window.monacoWorkspaceInstance.focus();
+    }
+  });
+
+  setTimeout(() => {
+    if (typeof monaco !== "undefined" && monaco.editor && monaco.editor.remeasureFonts) {
+      try { monaco.editor.remeasureFonts(); } catch(e) {}
+    }
+    if (window.monacoWorkspaceInstance) {
+      window.monacoWorkspaceInstance.layout();
+    }
+  }, 200);
+
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => {
+      if (typeof monaco !== "undefined" && monaco.editor && monaco.editor.remeasureFonts) {
+        try { monaco.editor.remeasureFonts(); } catch(e) {}
+      }
+      if (window.monacoWorkspaceInstance) {
+        window.monacoWorkspaceInstance.layout();
+      }
+    });
+  }
 }
 
 window.runSimulationWorkspace = function() {
-  const code = window.monacoWorkspaceInstance?.getValue() || "";
+  const code = getWorkspaceCodeValue();
   const consoleBox = document.getElementById("workspace-console-box");
   if (!consoleBox) return;
 
@@ -546,13 +650,13 @@ window.runSimulationWorkspace = function() {
 
     if (!isCorrect) {
       consoleBox.className = "text-[11px] font-mono text-red-400 h-20 overflow-y-auto whitespace-pre-wrap";
-      consoleBox.textContent += `[ERROR] Functional mismatch during testbench simulation.\nExpected logic: "${expectedText}".\nTestbench failed on Vector #1.`;
+      consoleBox.textContent += `[RTL PATTERN MISMATCH]: Static structure analysis did not match target logic pattern.\nTarget Spec: "${expectedText}".\nSyntax Checks Passed: 1/2.`;
       failPracticeTestcases(currentCh);
       return;
     }
 
     consoleBox.className = "text-[11px] font-mono text-emerald-400 h-20 overflow-y-auto whitespace-pre-wrap";
-    consoleBox.textContent += "[COMPILATION SUCCESSFUL]\nTestbench simulation complete. All 12 testcases matched!";
+    consoleBox.textContent += "[VERIFICATION PASSED]\nStatic RTL Syntax & Structure Check Complete.\nChecks Passed: 2/2 Assertions Matched.\nNote: Client-side static pattern check verified. Full Icarus/Verilator HDL execution requires local/server HDL runtime.";
 
     hasPracticeSimulated = true;
     isSimulationSuccessful = true;
