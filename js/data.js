@@ -875,6 +875,80 @@ const mainProblemSeeds = [
   { title: "Floating Clock Net Wire Fix", topic: "Debugging", difficulty: "Easy", desc: "Connect undriven clock port on sequential block to main system clock.", code: "always @(posedge sys_clk) // Connected system clock net" }
 ];
 
+function generateModuleTemplate(idx, item) {
+  const title = item.title;
+  const topic = item.topic;
+  const code = item.code || "";
+
+  const isCombinational = topic.includes("Combinational") || 
+                          topic.includes("Verilog Basics") || 
+                          title.includes("Wire") || 
+                          title.includes("Gate") || 
+                          title.includes("Adder") || 
+                          title.includes("Decoder") || 
+                          title.includes("Multiplexer") || 
+                          title.includes("MUX") || 
+                          title.includes("Comparator") || 
+                          title.includes("Swapper") || 
+                          title.includes("Converter") || 
+                          title.includes("Shifter") || 
+                          title.includes("Parity") || 
+                          title.includes("Reversal") || 
+                          title.includes("Population") || 
+                          title.includes("Inverter") || 
+                          title.includes("Subtractor") || 
+                          title.includes("Concatenation") || 
+                          title.includes("Replication") || 
+                          title.includes("Tri-State") || 
+                          title.includes("Expansion") || 
+                          title.includes("Masked") || 
+                          title.includes("Bitwise");
+
+  if (isCombinational) {
+    if (title.includes("Four Wires")) {
+      return `module design_block_${idx} (\n    input  wire a,\n    input  wire b,\n    input  wire c,\n    input  wire d,\n    output wire w,\n    output wire x,\n    output wire y,\n    output wire z\n);\n    // Write your solution here\nendmodule`;
+    }
+    if (title.includes("Vector Bit Selection")) {
+      return `module design_block_${idx} (\n    input  wire [7:0] in,\n    output wire [3:0] high_nibble,\n    output wire [3:0] low_nibble\n);\n    // Write your solution here\nendmodule`;
+    }
+    if (title.includes("Tri-State")) {
+      return `module design_block_${idx} (\n    input  wire [7:0] in,\n    input  wire enable,\n    output wire [7:0] out\n);\n    // Write your solution here\nendmodule`;
+    }
+    if (title.includes("Concatenation")) {
+      return `module design_block_${idx} (\n    input  wire [1:0] a,\n    input  wire [1:0] b,\n    input  wire [1:0] c,\n    input  wire [1:0] d,\n    output wire [7:0] out\n);\n    // Write your solution here\nendmodule`;
+    }
+    if (title.includes("Bitwise vs Logical")) {
+      return `module design_block_${idx} (\n    input  wire [3:0] a,\n    input  wire [3:0] b,\n    output wire [3:0] out_bit,\n    output wire out_log\n);\n    // Write your solution here\nendmodule`;
+    }
+    if (title.includes("7-Segment")) {
+      return `module design_block_${idx} (\n    input  wire [3:0] bcd,\n    output reg  [6:0] seg\n);\n    // Write your solution here\nendmodule`;
+    }
+    if (title.includes("Multiplexer") || title.includes("MUX")) {
+      if (code.includes("in0")) {
+        return `module design_block_${idx} (\n    input  wire [7:0] in0,\n    input  wire [7:0] in1,\n    input  wire sel,\n    output wire [7:0] out\n);\n    // Write your solution here\nendmodule`;
+      }
+      return `module design_block_${idx} (\n    input  wire [7:0] a,\n    input  wire [7:0] b,\n    input  wire [7:0] c,\n    input  wire [7:0] d,\n    input  wire [1:0] sel,\n    output reg  [7:0] out\n);\n    // Write your solution here\nendmodule`;
+    }
+    if (title.includes("Carry Lookahead") || title.includes("Full Adder") || title.includes("Ripple Carry")) {
+      return `module design_block_${idx} (\n    input  wire [3:0] a,\n    input  wire [3:0] b,\n    input  wire cin,\n    output wire [3:0] sum,\n    output wire cout\n);\n    // Write your solution here\nendmodule`;
+    }
+    if (title.includes("Comparator")) {
+      return `module design_block_${idx} (\n    input  wire [7:0] a,\n    input  wire [7:0] b,\n    output wire A_gt_B,\n    output wire A_eq_B,\n    output wire A_lt_B\n);\n    // Write your solution here\nendmodule`;
+    }
+
+    // Default 2-input combinational if 'a' and 'b' are used in solution (e.g. XOR Gate, AND Gate, NOR Gate)
+    if (code.includes("a") && code.includes("b")) {
+      return `module design_block_${idx} (\n    input  wire [7:0] a,\n    input  wire [7:0] b,\n    output wire [7:0] out\n);\n    // Write your solution here\nendmodule`;
+    }
+
+    // Default single-input combinational (Simple Wire, Inverter, Vector Reversal, etc.)
+    return `module design_block_${idx} (\n    input  wire [7:0] in,\n    output wire [7:0] out\n);\n    // Write your solution here\nendmodule`;
+  }
+
+  // Sequential Logic / FSM / Counters / Shift Registers
+  return `module design_block_${idx} (\n    input  wire clk,\n    input  wire rst,\n    input  wire [7:0] in,\n    output reg  [7:0] out\n);\n    // Write your solution here\nendmodule`;
+}
+
 mainProblemSeeds.forEach((item, idx) => {
   VLSIData.challenges.push({
     id: `ch-${idx + 1}`,
@@ -882,7 +956,7 @@ mainProblemSeeds.forEach((item, idx) => {
     topic: item.topic,
     difficulty: item.difficulty,
     description: item.desc,
-    initial_code: `module design_block_${idx+1} (\n    input  wire clk,\n    input  wire rst,\n    input  wire [7:0] in,\n    output reg  [7:0] out\n);\n    // Write your solution here\nendmodule`,
+    initial_code: generateModuleTemplate(idx + 1, item),
     solution: item.code,
     acceptance: `${65 + (idx * 7) % 30}% acceptance`,
     solved: `${1 + (idx * 3) % 18}.${(idx * 5) % 9}k solved`,

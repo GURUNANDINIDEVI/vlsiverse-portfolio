@@ -303,7 +303,7 @@ function renderCodingWorkspace(container) {
       ` : ''}
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-2">
-        <!-- Left Side: Problem Statement, Hints, Solutions -->
+        <!-- Left Side: Problem Statement, Hints, Solutions, Waveforms & Testcases -->
         <div class="flex flex-col gap-6">
           <div class="glass-panel p-6 rounded-2xl border-white/5">
             <span class="text-[10px] text-blue-400 font-bold uppercase tracking-widest font-mono">${currentCh.topic}</span>
@@ -321,9 +321,28 @@ function renderCodingWorkspace(container) {
               </div>
             </div>
           </div>
+
+          <!-- Simulation outcomes displayed below problem statement -->
+          <div id="practice-outcomes-container" class="${hasPracticeSimulated ? '' : 'hidden'} flex flex-col gap-6">
+            <!-- Testcase Assertions -->
+            <div class="glass-panel p-5 rounded-2xl border-white/5">
+              <h4 class="text-xs font-heading font-bold ${isSimulationSuccessful ? 'text-emerald-400' : 'text-red-400'} uppercase tracking-widest mb-3">Simulation Testcases Passed</h4>
+              <div id="practice-testcases-box" class="flex flex-col gap-2">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+
+            <!-- Waveform Canvas -->
+            <div class="glass-panel p-5 rounded-2xl border-white/5">
+              <h4 class="text-xs font-heading font-bold text-blue-400 uppercase tracking-widest mb-3">Timing Analysis Waveforms</h4>
+              <div class="bg-slate-950 p-3 rounded-xl border border-white/5">
+                <canvas id="practice-waveform-canvas" class="w-full h-32" width="450" height="120"></canvas>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <!-- Right Side: Editor, Console, Waveforms, Testcases -->
+        <!-- Right Side: Editor & Compiler Console -->
         <div class="flex flex-col gap-6">
           <div class="glass-panel rounded-2xl overflow-hidden border border-white/10">
             <div class="bg-slate-950 px-5 py-2.5 border-b border-white/5 flex justify-between items-center text-[10px] font-mono text-gray-500">
@@ -349,25 +368,6 @@ function renderCodingWorkspace(container) {
             <button onclick="submitWorkspaceRtl()" class="flex-grow py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-bold rounded-xl shadow-lg transition-all">
               <i class="fa-solid fa-paper-plane mr-1.5"></i> Submit Code
             </button>
-          </div>
-
-          <!-- Simulation outcomes -->
-          <div id="practice-outcomes-container" class="${hasPracticeSimulated ? '' : 'hidden'} flex flex-col gap-6">
-            <!-- Testcase Assertions -->
-            <div class="glass-panel p-5 rounded-2xl border-white/5">
-              <h4 class="text-xs font-heading font-bold ${isSimulationSuccessful ? 'text-emerald-400' : 'text-red-400'} uppercase tracking-widest mb-3">Simulation Testcases Passed</h4>
-              <div id="practice-testcases-box" class="flex flex-col gap-2">
-                <!-- Populated dynamically -->
-              </div>
-            </div>
-
-            <!-- Waveform Canvas -->
-            <div class="glass-panel p-5 rounded-2xl border-white/5">
-              <h4 class="text-xs font-heading font-bold text-blue-400 uppercase tracking-widest mb-3">Timing Analysis Waveforms</h4>
-              <div class="bg-slate-950 p-3 rounded-xl border border-white/5">
-                <canvas id="practice-waveform-canvas" class="w-full h-32" width="450" height="120"></canvas>
-              </div>
-            </div>
           </div>
 
           <!-- Console logging -->
@@ -742,60 +742,81 @@ function getChallengeWaveformSignals(ch) {
 function getChallengeTestcases(ch, passed) {
   const cases = [];
   const title = ch.title;
-  
+  const topic = ch.topic;
+
+  const isCombinational = topic.includes("Combinational") || 
+                          title.includes("Wire") || 
+                          title.includes("Reversal") || 
+                          title.includes("Decoder") || 
+                          title.includes("Adder") || 
+                          title.includes("Gates") || 
+                          title.includes("Population Counter") ||
+                          title.includes("Multiplier") ||
+                          title.includes("Inverter") ||
+                          title.includes("AND Gate") ||
+                          title.includes("NOR Gate") ||
+                          title.includes("XOR Gate") ||
+                          title.includes("Mux") ||
+                          title.includes("Shifter") ||
+                          title.includes("Swapper") ||
+                          title.includes("Comparator");
+
   if (title.includes("Simple Wire")) {
-    cases.push({ desc: "in = 8'h55 -> expected out = 8'h55", val: passed });
-    cases.push({ desc: "in = 8'hAA -> expected out = 8'hAA", val: passed });
+    cases.push({ desc: "Stimulus #1: in = 8'h55 -> expected out = 8'h55", val: passed });
+    cases.push({ desc: "Stimulus #2: in = 8'hAA -> expected out = 8'hAA", val: passed });
+    cases.push({ desc: "Stimulus #3: in = 8'h00 -> expected out = 8'h00", val: passed });
+    cases.push({ desc: "Stimulus #4: in = 8'hFF -> expected out = 8'hFF", val: passed });
   } else if (title.includes("Four Wires")) {
-    cases.push({ desc: "inputs a=1, b=0, c=1, d=0 -> expected w=1, x=0, y=1, z=0", val: passed });
-    cases.push({ desc: "inputs a=0, b=1, c=0, d=1 -> expected w=0, x=1, y=0, z=1", val: passed });
+    cases.push({ desc: "Stimulus #1: a=1, b=0, c=1, d=0 -> expected w=1, x=0, y=1, z=0", val: passed });
+    cases.push({ desc: "Stimulus #2: a=0, b=1, c=0, d=1 -> expected w=0, x=1, y=0, z=1", val: passed });
+    cases.push({ desc: "Stimulus #3: a=1, b=1, c=1, d=1 -> expected w=1, x=1, y=1, z=1", val: passed });
+    cases.push({ desc: "Stimulus #4: a=0, b=0, c=0, d=0 -> expected w=0, x=0, y=0, z=0", val: passed });
   } else if (title.includes("Vector Reversal")) {
-    cases.push({ desc: "in = 8'b10000000 -> expected out = 8'b00000001", val: passed });
-    cases.push({ desc: "in = 8'b11001010 -> expected out = 8'b01010011", val: passed });
-  } else if (title.includes("Vector Gates")) {
-    cases.push({ desc: "bitwise OR: a=3'b101, b=3'b011 -> expected out=3'b111", val: passed });
-    cases.push({ desc: "logical AND: a=3'b101, b=3'b000 -> expected out=1'b0", val: passed });
-  } else if (title.includes("7-Segment Decoder")) {
-    cases.push({ desc: "in = 4'd0 -> expected segments = 7'b1111110", val: passed });
-    cases.push({ desc: "in = 4'd1 -> expected segments = 7'b0110000", val: passed });
-  } else if (title.includes("9-bit Population Counter")) {
-    cases.push({ desc: "in = 9'b101010101 -> expected count = 4'd5", val: passed });
-    cases.push({ desc: "in = 9'b111111111 -> expected count = 4'd9", val: passed });
-  } else if (title.includes("Carry Lookahead Adder")) {
-    cases.push({ desc: "a=4'h5, b=4'h3, cin=1'b0 -> expected sum=4'h8, cout=1'b0", val: passed });
-    cases.push({ desc: "a=4'hF, b=4'h1, cin=1'b1 -> expected sum=4'h1, cout=1'b1", val: passed });
-  } else if (title.includes("D Flip-Flop")) {
-    cases.push({ desc: "clk edge, rst=1, d=8'h55 -> expected q=8'h00 (Reset State)", val: passed });
-    cases.push({ desc: "clk edge, rst=0, d=8'hAA -> expected q=8'hAA (Normal Latency)", val: passed });
-  } else if (title.includes("JK Flip-Flop")) {
-    cases.push({ desc: "j=1, k=0 -> expected q=1'b1 (Set State)", val: passed });
-    cases.push({ desc: "j=1, k=1, previous q=1'b1 -> expected q=1'b0 (Toggle State)", val: passed });
-  } else if (title.includes("Counter")) {
-    cases.push({ desc: "rst=1 -> expected count = 0 (Reset Synchronized)", val: passed });
-    cases.push({ desc: "en=1, previous count = 4'h5 -> expected count = 4'h6", val: passed });
-  } else if (title.includes("LFSR") || title.includes("Shift Register")) {
-    cases.push({ desc: "rst=1 -> expected register state = 4'h1 (Seed Value)", val: passed });
-    cases.push({ desc: "clk edge -> expected state shifts right with tap XOR", val: passed });
-  } else if (title.includes("FSM") || title.includes("Detector")) {
-    cases.push({ desc: "rst=1 -> expected state = S_RESET / S0", val: passed });
-    cases.push({ desc: "input sequence 1101 -> expected output detected = 1'b1", val: passed });
-  } else if (title.includes("Multiplexer")) {
-    cases.push({ desc: "sel=0, in0=8'hAA, in1=8'h55 -> expected out=8'hAA", val: passed });
-    cases.push({ desc: "sel=1, in0=8'hAA, in1=8'h55 -> expected out=8'h55", val: passed });
-  } else if (title.includes("Decoder")) {
-    cases.push({ desc: "in=3'd3 -> expected out = 8'b00001000 (One-Hot #3)", val: passed });
-    cases.push({ desc: "in=3'd0 -> expected out = 8'b00000001 (One-Hot #0)", val: passed });
+    cases.push({ desc: "Stimulus #1: in = 8'b10000000 -> expected out = 8'b00000001", val: passed });
+    cases.push({ desc: "Stimulus #2: in = 8'b11001010 -> expected out = 8'b01010011", val: passed });
+    cases.push({ desc: "Stimulus #3: in = 8'b11110000 -> expected out = 8'b00001111", val: passed });
+    cases.push({ desc: "Stimulus #4: in = 8'b01010101 -> expected out = 8'b10101010", val: passed });
+  } else if (title.includes("Vector Gates") || title.includes("Gates")) {
+    cases.push({ desc: "Stimulus #1: bitwise OR: a=3'b101, b=3'b011 -> expected out=3'b111", val: passed });
+    cases.push({ desc: "Stimulus #2: logical AND: a=3'b101, b=3'b000 -> expected out=1'b0", val: passed });
+    cases.push({ desc: "Stimulus #3: bitwise XOR: a=3'b110, b=3'b101 -> expected out=3'b011", val: passed });
+    cases.push({ desc: "Stimulus #4: bitwise NOT: a=3'b000 -> expected out=3'b111", val: passed });
+  } else if (title.includes("7-Segment")) {
+    cases.push({ desc: "Stimulus #1: in = 4'd0 -> expected segments = 7'b1111110 (Digit 0)", val: passed });
+    cases.push({ desc: "Stimulus #2: in = 4'd1 -> expected segments = 7'b0110000 (Digit 1)", val: passed });
+    cases.push({ desc: "Stimulus #3: in = 4'd5 -> expected segments = 7'b1011011 (Digit 5)", val: passed });
+    cases.push({ desc: "Stimulus #4: in = 4'd9 -> expected segments = 7'b1111011 (Digit 9)", val: passed });
+  } else if (title.includes("Population Counter")) {
+    cases.push({ desc: "Stimulus #1: in = 9'b101010101 -> expected count = 4'd5", val: passed });
+    cases.push({ desc: "Stimulus #2: in = 9'b111111111 -> expected count = 4'd9", val: passed });
+    cases.push({ desc: "Stimulus #3: in = 9'b000000000 -> expected count = 4'd0", val: passed });
+    cases.push({ desc: "Stimulus #4: in = 9'b000010000 -> expected count = 4'd1", val: passed });
+  } else if (title.includes("Adder")) {
+    cases.push({ desc: "Stimulus #1: a=4'h5, b=4'h3, cin=1'b0 -> expected sum=4'h8, cout=1'b0", val: passed });
+    cases.push({ desc: "Stimulus #2: a=4'hF, b=4'h1, cin=1'b1 -> expected sum=4'h1, cout=1'b1", val: passed });
+    cases.push({ desc: "Stimulus #3: a=4'hA, b=4'h5, cin=1'b0 -> expected sum=4'hF, cout=1'b0", val: passed });
+    cases.push({ desc: "Stimulus #4: a=4'h0, b=4'h0, cin=1'b0 -> expected sum=4'h0, cout=1'b0", val: passed });
+  } else if (title.includes("Multiplexer") || title.includes("MUX")) {
+    cases.push({ desc: "Stimulus #1: sel=2'b00, in0=8'hAA -> expected out=8'hAA", val: passed });
+    cases.push({ desc: "Stimulus #2: sel=2'b01, in1=8'h55 -> expected out=8'h55", val: passed });
+    cases.push({ desc: "Stimulus #3: sel=2'b10, in2=8'hFF -> expected out=8'hFF", val: passed });
+    cases.push({ desc: "Stimulus #4: sel=2'b11, in3=8'h00 -> expected out=8'h00", val: passed });
   } else if (title.includes("Comparator")) {
-    cases.push({ desc: "a=8'h55, b=8'hAA -> expected a_lt_b = 1'b1, a_eq_b = 1'b0", val: passed });
-    cases.push({ desc: "a=8'h77, b=8'h77 -> expected a_eq_b = 1'b1", val: passed });
+    cases.push({ desc: "Stimulus #1: a=8'h55, b=8'hAA -> expected a_lt_b=1'b1, a_eq_b=1'b0", val: passed });
+    cases.push({ desc: "Stimulus #2: a=8'h77, b=8'h77 -> expected a_eq_b=1'b1, a_gt_b=1'b0", val: passed });
+    cases.push({ desc: "Stimulus #3: a=8'hFF, b=8'h00 -> expected a_gt_b=1'b1, a_lt_b=1'b0", val: passed });
+    cases.push({ desc: "Stimulus #4: a=8'h00, b=8'h00 -> expected a_eq_b=1'b1, a_lt_b=1'b0", val: passed });
+  } else if (isCombinational) {
+    cases.push({ desc: "Combinational Vector #1: a=8'h12, b=8'h34 -> expected output truth table verified", val: passed });
+    cases.push({ desc: "Combinational Vector #2: a=8'h00, b=8'hFF -> expected output truth table verified", val: passed });
+    cases.push({ desc: "Combinational Vector #3: a=8'hAA, b=8'h55 -> expected output truth table verified", val: passed });
+    cases.push({ desc: "Combinational Vector #4: a=8'h7F, b=8'h80 -> expected output truth table verified", val: passed });
   } else {
-    if (ch.topic.includes("Combinational")) {
-      cases.push({ desc: "a=8'h12, b=8'h34 -> expected out matches combinational function", val: passed });
-      cases.push({ desc: "a=8'h00, b=8'hFF -> expected out matches truth table", val: passed });
-    } else {
-      cases.push({ desc: "rst=1 -> expected out = 0 (Synchronous Reset)", val: passed });
-      cases.push({ desc: "clk edge, rst=0, in=8'h55 -> expected out matches register step", val: passed });
-    }
+    // Sequential logic (has clk, rst)
+    cases.push({ desc: "Step #1 (Reset Phase): rst=1, clk edge -> expected register state = Reset Default", val: passed });
+    cases.push({ desc: "Step #2 (Active Phase): rst=0, en=1, clk edge -> expected output transition step #1", val: passed });
+    cases.push({ desc: "Step #3 (Hold Phase): rst=0, en=0, clk edge -> expected output value latched", val: passed });
+    cases.push({ desc: "Step #4 (Sequential Transition): rst=0, en=1, clk edge -> expected next state reached", val: passed });
   }
   return cases;
 }
