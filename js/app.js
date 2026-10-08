@@ -2,6 +2,7 @@
 
 const AppState = {
   user: {
+    id: "usr_guest",
     name: "VLSI Student",
     email: "student@vlsiverse.com",
     streak: 0,
@@ -11,7 +12,6 @@ const AppState = {
     certificates: [],
     bookmarks: [],
     completed_challenges: [],
-    // Tracking consistency - 365 days activity grid values
     activityLog: {} 
   },
   currentView: "home",
@@ -64,15 +64,23 @@ function showToast(message, type = "success") {
   }, 3500);
 }
 
-// Router dispatch
+// Router dispatch with strict Admin Authorization Guard
 function navigateTo(viewId) {
+  if (viewId === "admin" && !isUserAdmin()) {
+    showToast("Access Denied: Admin authorization required.", "error");
+    viewId = AppState.user.signedIn ? "dashboard" : "auth";
+  }
   AppState.currentView = viewId;
   window.location.hash = viewId;
   renderApp();
 }
 
 window.addEventListener("hashchange", () => {
-  const hash = window.location.hash.substring(1) || "home";
+  let hash = window.location.hash.substring(1) || "home";
+  if (hash === "admin" && !isUserAdmin()) {
+    showToast("Access Denied: Admin authorization required.", "error");
+    hash = AppState.user.signedIn ? "dashboard" : "auth";
+  }
   if (routes[hash]) {
     AppState.currentView = hash;
     renderApp();
@@ -101,31 +109,31 @@ function renderApp() {
         </div>
         
         <!-- Navigation Menu -->
-        <nav class="hidden xl:flex items-center gap-6">
+        <nav class="hidden lg:flex items-center gap-6">
           ${getNavHTML()}
         </nav>
         
         <!-- Sign In and User Streak controls -->
         <div class="flex items-center gap-3">
-          <button onclick="navigateTo('dashboard')" class="hidden md:flex items-center gap-1.5 border border-blue-500/20 bg-blue-950/20 rounded-full px-3 py-1 text-xs hover:border-blue-400 transition-colors">
+          <button onclick="navigateTo('dashboard')" aria-label="View streak and user dashboard" class="hidden md:flex items-center gap-1.5 border border-blue-500/20 bg-blue-950/20 rounded-full px-3 py-1 text-xs hover:border-blue-400 transition-colors">
             <span class="text-amber-500">🔥</span>
             <span class="font-bold text-blue-300 font-heading" id="streak-counter-header">${AppState.user.streak || 0} Streak</span>
           </button>
           
           ${AppState.user.signedIn ? `
             <div class="flex items-center gap-2">
-              <button onclick="navigateTo('dashboard')" class="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-white/10 bg-slate-900/60 hover:bg-slate-800 text-xs transition-all hover:border-blue-500/30">
+              <button onclick="navigateTo('dashboard')" aria-label="View user profile" class="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-white/10 bg-slate-900/60 hover:bg-slate-800 text-xs transition-all hover:border-blue-500/30">
                 <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-blue-600 to-cyan-400 flex items-center justify-center text-[10px] font-bold text-white uppercase shadow">
                   ${(AppState.user.name || "U").charAt(0)}
                 </div>
                 <span class="font-semibold text-white text-xs hidden sm:inline">${AppState.user.name || "Explorer"}</span>
               </button>
-              <button onclick="signOutUser()" title="Sign Out" class="p-2 text-gray-400 hover:text-red-400 transition-colors rounded-lg hover:bg-white/5">
+              <button onclick="signOutUser()" title="Sign Out" aria-label="Sign out of account" class="p-2 text-gray-400 hover:text-red-400 transition-colors rounded-lg hover:bg-white/5">
                 <i class="fa-solid fa-right-from-bracket text-xs"></i>
               </button>
             </div>
           ` : `
-            <button onclick="navigateTo('auth')" class="px-5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-heading font-semibold text-xs tracking-wider transition-all shadow-lg shadow-blue-500/20 hover:scale-105 active:scale-95">
+            <button onclick="navigateTo('auth')" aria-label="Sign in to platform" class="px-5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-heading font-semibold text-xs tracking-wider transition-all shadow-lg shadow-blue-500/20 hover:scale-105 active:scale-95">
               Sign In
             </button>
           `}
@@ -133,15 +141,15 @@ function renderApp() {
       </header>
 
       <!-- Mobile Navigation Drawer trigger -->
-      <div class="xl:hidden bg-slate-900 border-b border-white/5 px-6 py-2 flex items-center justify-between">
+      <div class="lg:hidden bg-slate-900 border-b border-white/5 px-6 py-2 flex items-center justify-between">
         <span class="text-xs text-gray-400 font-heading">Navigation Menu</span>
-        <button onclick="toggleMobileMenu()" class="text-blue-400 text-xs font-bold flex items-center gap-1">
+        <button onclick="toggleMobileMenu()" aria-label="Toggle mobile navigation menu" class="text-blue-400 text-xs font-bold flex items-center gap-1">
           <i class="fa-solid fa-bars"></i> Menu
         </button>
       </div>
       
       <!-- Mobile Menu Panel -->
-      <div id="mobile-menu" class="hidden xl:hidden glass-panel border-b border-white/10 p-4 flex flex-col gap-2">
+      <div id="mobile-menu" class="hidden lg:hidden glass-panel border-b border-white/10 p-4 flex flex-col gap-2">
         ${getMobileNavHTML()}
       </div>
 
@@ -155,11 +163,11 @@ function renderApp() {
 
       <!-- Footer -->
       <footer class="border-t border-white/5 bg-slate-950/80 px-8 py-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-500">
-        <p>&copy; 2026 VLSIVerse Platform. Created by Nandini. Dedicated VLSI Design & Verification practice engine.</p>
+        <p>&copy; 2026 VLSIVerse Platform. Created by Guru Nandini Devi. Semiconductor &amp; Hardware Practice Engine.</p>
         <div class="flex items-center gap-6 font-medium">
-          <a href="#" class="hover:text-blue-400 transition-colors">Documentation</a>
-          <a href="#" class="hover:text-blue-400 transition-colors">Terms</a>
-          <a href="#" class="hover:text-blue-400 transition-colors">Privacy</a>
+          <a href="https://github.com/GURUNANDINIDEVI/vlsiverse-portfolio" target="_blank" rel="noopener noreferrer" class="hover:text-blue-400 transition-colors" aria-label="Visit GitHub repository">GitHub</a>
+          <a href="https://linkedin.com/in/gurunandinidevi" target="_blank" rel="noopener noreferrer" class="hover:text-blue-400 transition-colors" aria-label="Visit LinkedIn profile">LinkedIn</a>
+          <a href="mailto:nandinidevitekumudi@gmail.com" class="hover:text-blue-400 transition-colors" aria-label="Send email contact">Contact</a>
         </div>
       </footer>
     </div>
@@ -168,24 +176,82 @@ function renderApp() {
   // Render active view
   const viewFunc = routes[viewName];
   if (viewFunc && typeof window[viewFunc] === "function") {
-    window[viewFunc]();
-    
-    // Trigger smooth fade-in-up entry transition on routing
-    const viewContainer = document.getElementById("view-container");
-    if (viewContainer) {
-      viewContainer.classList.remove("animate-fade-in-up");
-      void viewContainer.offsetWidth; // Force layout reflow
-      viewContainer.classList.add("animate-fade-in-up");
+    try {
+      window[viewFunc]();
+      const viewContainer = document.getElementById("view-container");
+      if (viewContainer) {
+        viewContainer.classList.remove("animate-fade-in-up");
+        void viewContainer.offsetWidth;
+        viewContainer.classList.add("animate-fade-in-up");
+      }
+    } catch(err) {
+      console.error(`[VLSIVerse Error rendering view '${viewName}']:`, err);
+      window.renderSectionError(viewName);
     }
   } else {
-    document.getElementById("view-container").innerHTML = `
-      <div class="py-24 text-center">
-        <h2 class="text-xl font-bold text-red-400">View not found: ${viewName}</h2>
-        <button onclick="navigateTo('home')" class="mt-4 px-4 py-2 bg-blue-600 rounded text-xs font-bold hover:bg-blue-500">Go Home</button>
-      </div>
-    `;
+    window.render404View(viewName);
   }
 }
+
+window.render404View = function(requestedRoute) {
+  const container = document.getElementById("view-container");
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="max-w-4xl mx-auto px-6 py-20 text-center font-sans animate-fade-in-up">
+      <div class="glass-panel p-10 rounded-3xl border-white/10 flex flex-col items-center gap-6 shadow-2xl">
+        <div class="w-20 h-20 rounded-full bg-red-950/40 border border-red-500/30 flex items-center justify-center text-red-400 text-3xl font-mono">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div>
+          <span class="text-xs text-red-400 font-mono font-bold uppercase tracking-widest">HTTP 404 &bull; Routing Error</span>
+          <h1 class="text-3xl font-heading font-extrabold text-white mt-1">404 — Page Not Found</h1>
+          <p class="text-sm text-gray-400 mt-2 max-w-md mx-auto">
+            The requested VLSIVerse route <code class="bg-slate-900 px-2 py-0.5 rounded text-red-300 font-mono">#${window.escapeHtml(requestedRoute || "unknown")}</code> does not exist or is no longer available.
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center justify-center gap-4 mt-2">
+          <button onclick="navigateTo('home')" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-xs font-bold text-white shadow-lg shadow-blue-500/20 flex items-center gap-2" aria-label="Return to home page">
+            <i class="fa-solid fa-house text-xs"></i> Return to Home
+          </button>
+          <button onclick="navigateTo('dashboard')" class="px-5 py-2.5 rounded-xl bg-slate-900 border border-white/10 hover:border-white/20 text-xs font-bold text-gray-300 flex items-center gap-2" aria-label="Go to user dashboard">
+            <i class="fa-solid fa-gauge-high text-xs"></i> Go to Dashboard
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+};
+
+window.renderSectionError = function(sectionName) {
+  const container = document.getElementById("view-container");
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="max-w-4xl mx-auto px-6 py-20 text-center font-sans animate-fade-in-up">
+      <div class="glass-panel p-10 rounded-3xl border-red-500/20 flex flex-col items-center gap-6 shadow-2xl">
+        <div class="w-16 h-16 rounded-full bg-red-950/50 border border-red-500/30 flex items-center justify-center text-red-400 text-2xl font-mono">
+          <i class="fa-solid fa-circle-exclamation"></i>
+        </div>
+        <div>
+          <span class="text-xs text-red-400 font-mono font-bold uppercase tracking-widest">Section Error &bull; ${window.escapeHtml(sectionName)}</span>
+          <h2 class="text-2xl font-heading font-extrabold text-white mt-1">Something went wrong while loading this section</h2>
+          <p class="text-xs text-gray-400 mt-2 max-w-md mx-auto">
+            An unexpected error occurred. Other parts of VLSIVerse remain fully functional.
+          </p>
+        </div>
+        <div class="flex items-center gap-3">
+          <button onclick="navigateTo('${sectionName}')" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-xs font-bold text-white shadow-lg flex items-center gap-2" aria-label="Try loading section again">
+            <i class="fa-solid fa-rotate-right text-xs"></i> Try Again
+          </button>
+          <button onclick="navigateTo('home')" class="px-5 py-2.5 rounded-xl bg-slate-900 border border-white/10 hover:border-white/20 text-xs font-bold text-gray-300 flex items-center gap-2" aria-label="Return home">
+            Return Home
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+};
 
 // Unified Date-Seeded Daily Challenge Helper (Synchronized across Home, Dashboard, Practice)
 function getDailyChallenge() {
@@ -217,14 +283,10 @@ function getDailyChallenge() {
   return { challenge, index, diffBadgeClass, pointsVal };
 }
 
-// Admin Verification Helper (Only Nandini / Admin can access)
+// Admin Verification Helper (Strict role === "admin" authorization)
 function isUserAdmin() {
   if (!AppState.user || !AppState.user.signedIn) return false;
-  const name = (AppState.user.name || "").toLowerCase();
-  const email = (AppState.user.email || "").toLowerCase();
-  const role = (AppState.user.role || "").toLowerCase();
-
-  return name.includes("nandini") || email.includes("nandini") || role.includes("admin") || email === "admin@vlsiverse.com";
+  return AppState.user.role === "admin";
 }
 
 // Centralized streak increment logic (ONLY called when a user solves a problem!)
@@ -263,21 +325,50 @@ function recordProblemSolvedStreak() {
   }
 }
 
-// Restore active logged in user from localStorage on startup
-(function initUserSession() {
+// Restore active logged in user session on startup (Supabase Auth + Cache)
+(async function initUserSession() {
   const activeUser = localStorage.getItem("vlsi_active_user");
   if (activeUser) {
     try {
       const parsed = JSON.parse(activeUser);
       if (parsed && parsed.email) {
         AppState.user.signedIn = true;
+        AppState.user.id = parsed.id || AppState.user.id;
         AppState.user.name = parsed.name || "Explorer";
         AppState.user.email = parsed.email;
-        AppState.user.role = parsed.role || "RTL Designer";
+        AppState.user.role = parsed.role || "user";
         AppState.user.xp = parsed.xp || 0;
         AppState.user.solved_count = parsed.solved_count || 0;
       }
     } catch(e) {}
+  }
+
+  // Restore live Supabase session if available
+  if (window.VLSISupabase && typeof window.VLSISupabase.getSession === "function") {
+    try {
+      const sessData = await window.VLSISupabase.getSession();
+      if (sessData && sessData.user) {
+        const p = sessData.profile || {};
+        AppState.user.signedIn = true;
+        AppState.user.id = p.id || sessData.user.id;
+        AppState.user.email = p.email || sessData.user.email;
+        AppState.user.name = p.name || sessData.user.user_metadata?.name || AppState.user.email.split("@")[0];
+        AppState.user.role = p.role || "user";
+        
+        if (typeof window.loadUserDataState === "function") {
+          window.loadUserDataState(AppState.user);
+        }
+
+        localStorage.setItem("vlsi_active_user", JSON.stringify({
+          id: AppState.user.id,
+          name: AppState.user.name,
+          email: AppState.user.email,
+          role: AppState.user.role
+        }));
+      }
+    } catch(err) {
+      console.warn("[VLSIVerse] Supabase session sync notice:", err);
+    }
   }
 })();
 
@@ -548,12 +639,53 @@ Regarding "${query}": I'm here to support you in any way I can! If you're explor
 Is there a specific topic or detail you'd like to dive into next?`;
 }
 
-// Initial bootstrap
-window.onload = () => {
+// Deterministic Application Initialization & Routing Bootstrap
+function initApp() {
+  if (typeof window.loadAdminPersistedData === "function") {
+    window.loadAdminPersistedData();
+  }
+
+  const storedUser = localStorage.getItem("vlsi_active_user");
+  if (storedUser) {
+    try {
+      const activeData = JSON.parse(storedUser);
+      if (activeData && (activeData.email || activeData.id)) {
+        const registered = typeof window.getRegisteredUsers === "function" ? window.getRegisteredUsers() : [];
+        const found = registered.find(u => (u.id && u.id === activeData.id) || (u.email && u.email.toLowerCase() === (activeData.email || "").toLowerCase()));
+        if (found) {
+          AppState.user.id = found.id;
+          AppState.user.name = found.username;
+          AppState.user.email = found.email;
+          AppState.user.role = found.role || "user";
+          AppState.user.signedIn = true;
+          if (typeof window.loadUserDataState === "function") {
+            window.loadUserDataState(AppState.user);
+          }
+        }
+      }
+    } catch(e) {
+      console.error("Error restoring active user session:", e);
+    }
+  }
+
   const hash = window.location.hash.substring(1) || "home";
   AppState.currentView = routes[hash] ? hash : "home";
   renderApp();
-};
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initApp);
+} else {
+  initApp();
+}
+
+// Fallback safety timeout (1.5 seconds) to ensure the boot screen never hangs
+setTimeout(() => {
+  const root = document.getElementById("app-root");
+  if (root && root.innerHTML.includes("BOOTING VLSIVERSE ENGINE")) {
+    initApp();
+  }
+}, 1500);
 
 // Global Helper Functions shared across views
 window.escapeHtml = function(str) {
@@ -573,3 +705,96 @@ window.copyToClipboard = function(content) {
     showToast("Failed to copy code.", "error");
   });
 };
+
+/* Centralized Admin Data & Announcement Persistence Layer */
+window.loadAdminPersistedData = function() {
+  const adminKey = "vlsi_admin_data";
+  try {
+    const raw = localStorage.getItem(adminKey);
+    if (raw && typeof VLSIData !== "undefined") {
+      const data = JSON.parse(raw);
+      if (data.challenges && Array.isArray(data.challenges)) {
+        data.challenges.forEach(adminCh => {
+          const idx = VLSIData.challenges.findIndex(c => c.id === adminCh.id);
+          if (idx >= 0) {
+            VLSIData.challenges[idx] = adminCh;
+          } else {
+            VLSIData.challenges.push(adminCh);
+          }
+        });
+      }
+      if (data.announcements && Array.isArray(data.announcements)) {
+        VLSIData.announcements = data.announcements;
+      }
+    }
+  } catch(e) {
+    console.error("Error loading admin persisted data:", e);
+  }
+};
+
+window.saveAdminPersistedData = function() {
+  const adminKey = "vlsi_admin_data";
+  try {
+    if (typeof VLSIData === "undefined") return;
+    const adminChallenges = VLSIData.challenges.filter(c => c.isAdminCreated || c.isEditedByAdmin);
+    const adminAnnouncements = VLSIData.announcements || [];
+    const payload = {
+      challenges: adminChallenges,
+      announcements: adminAnnouncements,
+      updatedAt: new Date().toISOString()
+    };
+    localStorage.setItem(adminKey, JSON.stringify(payload));
+  } catch(e) {
+    console.error("Error saving admin persisted data:", e);
+  }
+};
+
+window.addAdminAnnouncement = function(title, message, priority = "normal") {
+  if (!title || !message) return false;
+  if (typeof VLSIData === "undefined") return false;
+  if (!VLSIData.announcements) VLSIData.announcements = [];
+  
+  const newAnn = {
+    id: "ann_" + Date.now(),
+    title: title.trim(),
+    message: message.trim(),
+    createdAt: new Date().toLocaleString(),
+    createdBy: AppState.user?.name || "Administrator",
+    priority: priority
+  };
+  
+  VLSIData.announcements.unshift(newAnn);
+  window.saveAdminPersistedData();
+  return true;
+};
+
+window.deleteAdminAnnouncement = function(annId) {
+  if (typeof VLSIData === "undefined" || !VLSIData.announcements) return false;
+  VLSIData.announcements = VLSIData.announcements.filter(a => a.id !== annId);
+  window.saveAdminPersistedData();
+  return true;
+};
+
+/* Centralized Production Global Error & Keyboard Modal Listener */
+window.addEventListener("keydown", function(e) {
+  if (e.key === "Escape") {
+    const authModal = document.getElementById("auth-modal");
+    if (authModal && !authModal.classList.contains("hidden")) {
+      authModal.classList.add("hidden");
+    }
+    if (typeof handbookState !== "undefined" && handbookState.isOpen) {
+      if (typeof closeHandbookModal === "function") closeHandbookModal();
+    }
+  }
+});
+
+window.addEventListener("error", function(event) {
+  console.error("[VLSIVerse Global Error]", event.error || event.message);
+  if (typeof showToast === "function") {
+    showToast("Something went wrong while loading this section. Please try again.", "error");
+  }
+});
+
+window.addEventListener("unhandledrejection", function(event) {
+  console.error("[VLSIVerse Unhandled Promise Rejection]", event.reason);
+});

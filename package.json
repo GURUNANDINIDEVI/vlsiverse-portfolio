@@ -1,0 +1,26 @@
+{
+  "name": "vlsiverse-portfolio",
+  "version": "2.0.0",
+  "description": "VLSIVerse - World's Premium Silicon Design & Hardware Practice Engine",
+  "main": "index.html",
+  "scripts": {
+    "build:css": "npx @tailwindcss/cli -i ./css/input.css -o ./css/styles.css --minify",
+    "build": "npm run build:css",
+    "dev": "npx @tailwindcss/cli -i ./css/input.css -o ./css/styles.css --watch"
+  },
+  "keywords": [
+    "vlsi",
+    "verilog",
+    "systemverilog",
+    "semiconductor",
+    "rtl",
+    "fpga",
+    "asic"
+  ],
+  "author": "GURU NANDINI DEVI",
+  "license": "MIT",
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.0.0",
+    "tailwindcss": "^4.0.0"
+  }
+}
