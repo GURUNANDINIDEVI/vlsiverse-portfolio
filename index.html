@@ -1,32 +1,33 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
-  <!-- SEO Optimization -->
+  <!-- Clean Global Error Handler -->
   <script>
     window.addEventListener('error', function(e) {
-      console.error("Global Error Caught:", e);
-      var errDiv = document.createElement('div');
-      errDiv.className = 'load-error-banner';
-      errDiv.style.position = 'fixed';
-      var existing = document.querySelectorAll('.load-error-banner').length;
-      errDiv.style.top = (existing * 60) + 'px';
-      errDiv.style.left = '0';
-      errDiv.style.width = '100%';
-      errDiv.style.background = '#881337';
-      errDiv.style.color = '#fecdd3';
-      errDiv.style.padding = '12px';
-      errDiv.style.zIndex = '99999';
-      errDiv.style.fontFamily = 'monospace';
-      errDiv.style.fontSize = '12px';
-      errDiv.style.borderBottom = '3px solid #f43f5e';
-      errDiv.innerHTML = '<strong>[VLSIVerse Load Error]:</strong> ' + e.message + ' at ' + e.filename + ':' + e.lineno;
-      document.body.appendChild(errDiv);
+      console.error("VLSIVerse Runtime Exception Caught:", e.error || e.message, "at", e.filename, ":", e.lineno);
+      const appRoot = document.getElementById("app-root");
+      if (appRoot && appRoot.innerHTML.includes("BOOTING VLSIVERSE ENGINE")) {
+        appRoot.innerHTML = `
+          <div class="h-screen w-screen flex flex-col items-center justify-center bg-[#05070f] text-[#f1f5f9] p-6 text-center font-sans">
+            <div class="w-14 h-14 rounded-2xl bg-rose-950/80 border border-rose-500/30 flex items-center justify-center text-rose-400 text-2xl mb-4 shadow-xl">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h2 class="font-heading font-extrabold text-xl text-white mb-2">Application Initialization Notice</h2>
+            <p class="text-xs text-gray-400 max-w-md mb-6 leading-relaxed">
+              VLSIVerse encountered an unexpected initialization event. Please refresh the page to reload the platform engine.
+            </p>
+            <button onclick="window.location.reload()" class="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-heading font-bold text-xs tracking-wider rounded-xl shadow-lg transition-all">
+              Reload Platform
+            </button>
+          </div>
+        `;
+      }
     });
   </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>VLSIVerse - World's Premium Silicon Design Practice Engine</title>
-  <meta name="description" content="Master semiconductor engineering, RTL Verilog, SystemVerilog, UVM, and physical design flows with 300+ challenges, visual labs, and 100+ interview preps.">
+  <meta name="description" content="Master semiconductor engineering, RTL Verilog, SystemVerilog, UVM, and physical design flows with 200+ RTL challenges, visual labs, and 100+ interview preps.">
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -58,11 +59,16 @@
     }
   </script>
 
+  <!-- Google Fonts: Inter, Outfit, Fira Code, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
   <!-- Custom Stylesheets -->
-  <link rel="stylesheet" href="css/styles.css?v=81">
+  <link rel="stylesheet" href="css/styles.css?v=120">
 </head>
 <body class="bg-[#05070f] text-gray-200 min-h-screen grid-bg">
 
@@ -83,28 +89,40 @@
   <!-- Toast Overlay Container -->
   <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
+  <!-- Supabase Environment Configuration -->
+  <script>
+    window.VLSIVERSE_ENV = {
+      SUPABASE_URL: "https://yzswsvvlxqwywwzufdlo.supabase.co",
+      SUPABASE_ANON_KEY: "sb_publishable_PnrW4sVlUxXBN7qUOkaNBw_sGjiP7cg"
+    };
+  </script>
+
+  <!-- Supabase CDN Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase_client.js?v=120"></script>
+
   <!-- Data Access Layer -->
-  <script src="js/data.js?v=99"></script>
+  <script src="js/data.js?v=120"></script>
 
   <!-- Background Animation Engine -->
-  <script src="js/bg_animation.js?v=99"></script>
+  <script src="js/bg_animation.js?v=120"></script>
 
   <!-- View Controllers -->
-  <script src="js/views/home.js?v=99"></script>
-  <script src="js/views/learn.js?v=99"></script>
-  <script src="js/views/practice.js?v=99"></script>
-  <script src="js/views/digital_practice.js?v=99"></script>
-  <script src="js/views/protocols.js?v=99"></script>
-  <script src="js/views/asic.js?v=99"></script>
-  <script src="js/views/projects.js?v=99"></script>
-  <script src="js/views/interviews.js?v=99"></script>
-  <script src="js/views/dashboard.js?v=99"></script>
-  <script src="js/views/admin.js?v=99"></script>
-  <script src="js/views/studio.js?v=99"></script>
-  <script src="js/views/auth.js?v=99"></script>
+  <script src="js/views/home.js?v=120"></script>
+  <script src="js/views/learn.js?v=120"></script>
+  <script src="js/views/practice.js?v=120"></script>
+  <script src="js/views/digital_practice.js?v=120"></script>
+  <script src="js/views/protocols.js?v=120"></script>
+  <script src="js/views/asic.js?v=120"></script>
+  <script src="js/views/projects.js?v=120"></script>
+  <script src="js/views/interviews.js?v=120"></script>
+  <script src="js/views/dashboard.js?v=120"></script>
+  <script src="js/views/admin.js?v=120"></script>
+  <script src="js/views/studio.js?v=120"></script>
+  <script src="js/views/auth.js?v=120"></script>
 
   <!-- Application Shell Router -->
-  <script src="js/app.js?v=99"></script>
+  <script src="js/app.js?v=120"></script>
 
 </body>
 </html>

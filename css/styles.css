@@ -437,5 +437,31 @@ select:focus-visible {
     animation: none !important;
     transform: none !important;
   }
+/* Pleasant Cursor & Smooth Caret Controls for Practice & Code Workspaces */
+.monaco-editor,
+.monaco-editor .monaco-mouse-cursor-text,
+#fallback-code-editor {
+  cursor: text !important;
 }
 
+.monaco-editor .cursor {
+  background-color: #38bdf8 !important;
+  border-color: #38bdf8 !important;
+  width: 2px !important;
+  transition: opacity 0.15s ease-in-out;
+}
+
+button,
+.cursor-pointer,
+select,
+input[type="radio"],
+input[type="checkbox"],
+summary,
+[role="button"] {
+  cursor: pointer !important;
+}
+
+.glass-panel,
+.practice-card {
+  cursor: default;
+}

@@ -140,7 +140,10 @@
       ctx.globalAlpha = 1.0;
     });
 
-    requestAnimationFrame(animate);
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!prefersReducedMotion) {
+      requestAnimationFrame(animate);
+    }
   }
 
   if (document.readyState === "loading") {
@@ -148,4 +151,83 @@
   } else {
     animate();
   }
+})();
+
+/* High-Precision Non-Blocking Custom Cursor Engine */
+(function initCustomCursor() {
+  if (window.matchMedia("(pointer: coarse)").matches || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    return;
+  }
+
+  let cursorDot = document.getElementById("custom-cursor-dot");
+  let cursorRing = document.getElementById("custom-cursor-ring");
+
+  if (!cursorDot) {
+    cursorDot = document.createElement("div");
+    cursorDot.id = "custom-cursor-dot";
+    cursorDot.style.cssText = `
+      position: fixed; top: 0; left: 0; width: 6px; height: 6px;
+      background-color: #38bdf8; border-radius: 50%; pointer-events: none;
+      z-index: 99999; transform: translate3d(-100px, -100px, 0);
+      transition: width 0.15s ease, height 0.15s ease, background-color 0.15s ease;
+      box-shadow: 0 0 8px rgba(56, 189, 248, 0.8);
+    `;
+    document.body.appendChild(cursorDot);
+  }
+
+  if (!cursorRing) {
+    cursorRing = document.createElement("div");
+    cursorRing.id = "custom-cursor-ring";
+    cursorRing.style.cssText = `
+      position: fixed; top: 0; left: 0; width: 26px; height: 26px;
+      border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: 50%; pointer-events: none;
+      z-index: 99998; transform: translate3d(-100px, -100px, 0);
+      transition: transform 0.08s ease-out, width 0.2s ease, height 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+    `;
+    document.body.appendChild(cursorRing);
+  }
+
+  let mouseX = -100;
+  let mouseY = -100;
+  let ringX = -100;
+  let ringY = -100;
+  let isHovered = false;
+
+  window.addEventListener("pointermove", (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+
+    cursorDot.style.transform = `translate3d(${mouseX - 3}px, ${mouseY - 3}px, 0)`;
+
+    const target = e.target;
+    if (target && target.closest("button, a, input, select, textarea, [onclick], .glass-panel-hover, .cursor-pointer")) {
+      if (!isHovered) {
+        isHovered = true;
+        cursorRing.style.width = "38px";
+        cursorRing.style.height = "38px";
+        cursorRing.style.borderColor = "rgba(168, 85, 247, 0.6)";
+        cursorRing.style.background = "rgba(168, 85, 247, 0.08)";
+        cursorDot.style.backgroundColor = "#a855f7";
+      }
+    } else {
+      if (isHovered) {
+        isHovered = false;
+        cursorRing.style.width = "26px";
+        cursorRing.style.height = "26px";
+        cursorRing.style.borderColor = "rgba(56, 189, 248, 0.4)";
+        cursorRing.style.background = "transparent";
+        cursorDot.style.backgroundColor = "#38bdf8";
+      }
+    }
+  }, { passive: true });
+
+  function renderCursorRing() {
+    ringX += (mouseX - ringX) * 0.25;
+    ringY += (mouseY - ringY) * 0.25;
+
+    const offset = isHovered ? 19 : 13;
+    cursorRing.style.transform = `translate3d(${ringX - offset}px, ${ringY - offset}px, 0)`;
+    requestAnimationFrame(renderCursorRing);
+  }
+  renderCursorRing();
 })();

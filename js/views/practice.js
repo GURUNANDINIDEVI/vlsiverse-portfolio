@@ -263,10 +263,28 @@ function renderCodingWorkspace(container) {
 
   const pastSubmission = getUserSubmissions(currentCh.id);
 
-  if (!currentCodeMap[currentCh.id]) {
-    // Default to last submitted code if available, otherwise initial template
-    currentCodeMap[currentCh.id] = pastSubmission ? pastSubmission.latestCode : currentCh.initial_code;
+  const isCombProblem = (currentCh.topic || "").includes("Combinational") || 
+                        (currentCh.topic || "").includes("Verilog Basics") || 
+                        currentCh.title.includes("Wire") || 
+                        currentCh.title.includes("Gate") || 
+                        currentCh.title.includes("Adder") || 
+                        currentCh.title.includes("Decoder") || 
+                        currentCh.title.includes("Multiplexer") || 
+                        currentCh.title.includes("MUX") || 
+                        currentCh.title.includes("Comparator") || 
+                        currentCh.title.includes("Swapper") || 
+                        currentCh.title.includes("Converter") || 
+                        currentCh.title.includes("Shifter") || 
+                        currentCh.title.includes("Parity") || 
+                        currentCh.title.includes("Reversal") || 
+                        currentCh.title.includes("Inverter") || 
+                        currentCh.title.includes("Subtractor");
+
+  let codeToLoad = pastSubmission ? pastSubmission.latestCode : currentCh.initial_code;
+  if (isCombProblem && (codeToLoad.includes("clk") || codeToLoad.includes("rst"))) {
+    codeToLoad = currentCh.initial_code;
   }
+  currentCodeMap[currentCh.id] = codeToLoad;
 
   container.innerHTML = `
     <div class="max-w-7xl mx-auto px-6 py-6 flex flex-col gap-4">
@@ -312,6 +330,36 @@ function renderCodingWorkspace(container) {
             
             <!-- Direct Hint & Solution Blocks -->
             <div class="mt-4 flex flex-col gap-3">
+              <!-- RTL Module Interface & Pin Specifications Card -->
+              <div class="p-4 rounded-xl bg-[#080d1a] border border-blue-500/20 flex flex-col gap-2 font-mono text-xs">
+                <div class="flex items-center justify-between border-b border-white/10 pb-2">
+                  <span class="text-blue-400 font-bold flex items-center gap-1.5">
+                    <i class="fa-solid fa-microchip text-cyan-400"></i> Module Interface & Pin Specifications
+                  </span>
+                  <span class="text-[10px] text-gray-400">Module: <strong class="text-white">${(currentCh.initial_code.match(/module\s+([a-zA-Z0-9_]+)/) || [])[1] || 'top_module'}</strong></span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <div class="bg-slate-950/60 p-2.5 rounded-lg border border-white/5">
+                    <span class="text-[10px] text-cyan-400 font-bold block mb-1">INPUT PORTS:</span>
+                    <div class="flex flex-wrap gap-1">
+                      ${getChallengeWaveformSignals(currentCh).filter(s => !s.includes("out") && !s.startsWith("q") && !s.startsWith("w") && !s.startsWith("x") && !s.startsWith("y") && !s.startsWith("z") && !s.includes("sum") && !s.includes("cout") && !s.includes("state") && !s.includes("a_eq_b") && !s.includes("a_lt_b") && !s.includes("a_gt_b")).map(p => `<span class="px-2 py-0.5 rounded bg-cyan-950/50 border border-cyan-500/30 text-cyan-300 text-[11px] font-bold">${p}</span>`).join('')}
+                    </div>
+                  </div>
+                  <div class="bg-slate-950/60 p-2.5 rounded-lg border border-white/5">
+                    <span class="text-[10px] text-purple-400 font-bold block mb-1">OUTPUT PORTS:</span>
+                    <div class="flex flex-wrap gap-1">
+                      ${getChallengeWaveformSignals(currentCh).filter(s => s.includes("out") || s.startsWith("q") || s.startsWith("w") || s.startsWith("x") || s.startsWith("y") || s.startsWith("z") || s.includes("sum") || s.includes("cout") || s.includes("state") || s.includes("a_eq_b") || s.includes("a_lt_b") || s.includes("a_gt_b")).map(p => `<span class="px-2 py-0.5 rounded bg-purple-950/50 border border-purple-500/30 text-purple-300 text-[11px] font-bold">${p}</span>`).join('')}
+                    </div>
+                  </div>
+                </div>
+                ${(currentCh.topic || "").includes("Combinational") || currentCh.title.includes("Wire") || currentCh.title.includes("Reversal") || currentCh.title.includes("Decoder") || currentCh.title.includes("Adder") || currentCh.title.includes("Gates") || currentCh.title.includes("Population Counter") || currentCh.title.includes("Multiplier") || currentCh.title.includes("Inverter") || currentCh.title.includes("AND Gate") || currentCh.title.includes("NOR Gate") || currentCh.title.includes("XOR Gate") || currentCh.title.includes("Mux") || currentCh.title.includes("Shifter") || currentCh.title.includes("Swapper") || currentCh.title.includes("Comparator") ? `
+                  <div class="text-[10px] text-emerald-400 bg-emerald-950/30 border border-emerald-500/20 px-3 py-1.5 rounded-lg flex items-center gap-1.5 mt-1">
+                    <i class="fa-solid fa-circle-check text-emerald-400"></i>
+                    <span>Combinational logic: Do NOT include <code>clk</code> or <code>rst</code> signals. Use exact port list above.</span>
+                  </div>
+                ` : ''}
+              </div>
+
               <details class="bg-slate-900/40 border border-white/5 rounded-xl p-3">
                 <summary class="text-xs font-heading font-bold text-cyan-400 cursor-pointer select-none">Reveal Design Hint</summary>
                 <p class="text-xs text-gray-400 mt-2 leading-relaxed font-mono">Use standard continuous assignments or sequential blocks matching the pin definitions.</p>
@@ -336,27 +384,55 @@ function renderCodingWorkspace(container) {
             <div class="glass-panel p-5 rounded-2xl border-white/5">
               <h4 class="text-xs font-heading font-bold text-blue-400 uppercase tracking-widest mb-3">Timing Analysis Waveforms</h4>
               <div class="bg-slate-950 p-3 rounded-xl border border-white/5">
-                <canvas id="practice-waveform-canvas" class="w-full h-32" width="450" height="120"></canvas>
+                <canvas id="practice-waveform-canvas" class="w-full" style="height:140px;" width="450" height="140"></canvas>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Right Side: Editor & Compiler Console -->
-        <div class="flex flex-col gap-6">
+        <div class="flex flex-col gap-4">
+
+          <!-- Submission History Inline Panel (top of right column) -->
+          <div id="submission-history-inline" class="${pastSubmission ? '' : 'hidden'} flex flex-col gap-3">
+            <div class="glass-panel p-4 rounded-2xl border border-purple-500/20 bg-purple-950/10">
+              <div class="flex items-center justify-between mb-3 border-b border-white/5 pb-2">
+                <span class="text-xs font-heading font-bold text-purple-400 flex items-center gap-1.5">
+                  <i class="fa-solid fa-clock-rotate-left"></i> Submission History
+                </span>
+                <span class="text-[10px] text-gray-400 font-mono">${pastSubmission ? pastSubmission.history.length : 0} submission(s)</span>
+              </div>
+              <div id="submission-history-inline-body" class="flex flex-col gap-3 max-h-64 overflow-y-auto pr-1">
+                ${pastSubmission && pastSubmission.history ? pastSubmission.history.map((h, idx) => `
+                  <div class="p-3 bg-slate-950/80 rounded-xl border border-white/8 flex flex-col gap-2">
+                    <div class="flex justify-between items-center text-[10px] font-mono border-b border-white/5 pb-1.5">
+                      <span class="text-gray-400 font-bold">Submission #${pastSubmission.history.length - idx} &bull; ${h.timestamp}</span>
+                      <div class="flex items-center gap-2">
+                        <span class="${h.passed ? 'text-emerald-400' : 'text-amber-400'} font-bold text-[10px]">
+                          ${h.passed ? '✓ PASSED' : '⚠ ATTEMPT'}
+                        </span>
+                        <button onclick="loadHistoricalSubmissionIntoEditor(${idx}, '${currentCh.id}')" class="px-2 py-0.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-[10px] font-bold">
+                          <i class="fa-solid fa-file-code"></i> Load
+                        </button>
+                        <button onclick="copySubmissionCodeToClipboard(${idx}, '${currentCh.id}')" class="px-2 py-0.5 bg-slate-800 border border-white/10 text-gray-300 hover:text-white rounded text-[10px]">
+                          <i class="fa-regular fa-copy"></i>
+                        </button>
+                      </div>
+                    </div>
+                    <pre class="bg-slate-900 p-2.5 rounded-lg text-[10px] font-mono text-emerald-400 overflow-x-auto max-h-28 leading-relaxed">${escapeHtml(h.code)}</pre>
+                  </div>
+                `).join('') : ''}
+              </div>
+            </div>
+          </div>
+
+          <!-- Monaco Editor Panel -->
           <div class="glass-panel rounded-2xl overflow-hidden border border-white/10">
             <div class="bg-slate-950 px-5 py-2.5 border-b border-white/5 flex justify-between items-center text-[10px] font-mono text-gray-500">
               <span class="flex items-center gap-2">
                 <i class="fa-solid fa-code text-blue-400"></i> design.v (Verilog RTL)
               </span>
-              <div class="flex items-center gap-3">
-                ${pastSubmission ? `
-                  <button onclick="openSubmissionHistoryModal('${currentCh.id}')" class="text-purple-400 hover:text-purple-300 font-bold underline flex items-center gap-1">
-                    <i class="fa-solid fa-history"></i> Submission History
-                  </button>
-                ` : ''}
-                <span class="text-blue-400">Compiler Core Active</span>
-              </div>
+              <span class="text-blue-400">Compiler Core Active</span>
             </div>
             <div id="monaco-workspace-container" class="h-80 bg-[#0b0f19]"></div>
           </div>
@@ -375,24 +451,6 @@ function renderCodingWorkspace(container) {
             <span class="text-[9px] font-heading font-bold text-blue-400 uppercase tracking-widest block mb-1">Compiler Console Trace</span>
             <pre id="workspace-console-box" class="text-[11px] font-mono text-gray-500 h-20 overflow-y-auto whitespace-pre-wrap">Awaiting RTL simulation run...</pre>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Submission History Modal -->
-    <div id="submission-history-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div class="bg-slate-900 border border-white/10 max-w-2xl w-full p-6 rounded-2xl relative shadow-2xl flex flex-col gap-4">
-        <div class="flex justify-between items-center border-b border-white/5 pb-3">
-          <h3 class="text-base font-heading font-extrabold text-white flex items-center gap-2">
-            <i class="fa-solid fa-clock-rotate-left text-purple-400"></i> Previously Submitted Code
-          </h3>
-          <button onclick="closeSubmissionHistoryModal()" class="text-gray-400 hover:text-white p-1">
-            <i class="fa-solid fa-xmark text-lg"></i>
-          </button>
-        </div>
-
-        <div id="submission-modal-body" class="flex flex-col gap-4 max-h-[70vh] overflow-y-auto">
-          <!-- Populated dynamically -->
         </div>
       </div>
     </div>
@@ -688,38 +746,88 @@ function getChallengeWaveformSignals(ch) {
   const title = ch.title;
   const topic = ch.topic;
   
-  // Check if it is combinational logic
+  // Check if it is combinational logic (no clk/rst required)
   const isCombinational = topic.includes("Combinational") || 
+                          topic.includes("Verilog Basics") ||
                           title.includes("Wire") || 
                           title.includes("Reversal") || 
                           title.includes("Decoder") || 
                           title.includes("Adder") || 
-                          title.includes("Gates") || 
+                          title.includes("Subtractor") || 
+                          title.includes("Gate") || 
                           title.includes("Population Counter") ||
-                          title.includes("Multiplier");
+                          title.includes("Population") ||
+                          title.includes("Multiplier") ||
+                          title.includes("Inverter") ||
+                          title.includes("Mux") ||
+                          title.includes("Multiplexer") ||
+                          title.includes("Shifter") ||
+                          title.includes("Swapper") ||
+                          title.includes("Comparator") ||
+                          title.includes("Parity") ||
+                          title.includes("Encoder") ||
+                          title.includes("Concatenation") ||
+                          title.includes("Replication") ||
+                          title.includes("Tri-State") ||
+                          title.includes("Bitwise") ||
+                          title.includes("Masked") ||
+                          title.includes("Expansion") ||
+                          title.includes("7-Segment") ||
+                          title.includes("Converter");
                           
   if (isCombinational) {
     if (title.includes("Four Wires")) {
       return ["a", "b", "c", "d", "w", "x", "y", "z"];
     }
-    if (title.includes("Gates")) {
+    if (title.includes("Vector Gates") || title.includes("Gates")) {
       return ["a[2:0]", "b[2:0]", "out_bitwise", "out_logical"];
     }
-    if (title.includes("7-Segment")) {
-      return ["in[3:0]", "out[6:0]"];
+    if (title.includes("XOR Gate")) {
+      return ["a[7:0]", "b[7:0]", "out[7:0]"];
+    }
+    if (title.includes("AND Gate")) {
+      return ["a[7:0]", "b[7:0]", "out[7:0]"];
+    }
+    if (title.includes("NOR Gate")) {
+      return ["a[7:0]", "b[7:0]", "out[7:0]"];
+    }
+    if (title.includes("7-Segment") || title.includes("Converter")) {
+      return ["bcd[3:0]", "seg[6:0]"];
     }
     if (title.includes("Population")) {
       return ["in[8:0]", "out[3:0]"];
     }
-    if (title.includes("Adder")) {
+    if (title.includes("Adder") || title.includes("Subtractor")) {
       return ["a[3:0]", "b[3:0]", "cin", "sum[3:0]", "cout"];
     }
-    if (title.includes("Multiplexer")) {
+    if (title.includes("Multiplexer") || title.includes("Mux")) {
       return ["in0[7:0]", "in1[7:0]", "sel", "out[7:0]"];
     }
     if (title.includes("Comparator")) {
-      return ["a[7:0]", "b[7:0]", "a_eq_b", "a_lt_b"];
+      return ["a[7:0]", "b[7:0]", "A_gt_B", "A_eq_B", "A_lt_B"];
     }
+    if (title.includes("Swapper")) {
+      return ["a[7:0]", "b[7:0]", "swap_a[7:0]", "swap_b[7:0]"];
+    }
+    if (title.includes("Shifter")) {
+      return ["in[7:0]", "shamt[2:0]", "out[7:0]"];
+    }
+    if (title.includes("Parity") || title.includes("Encoder")) {
+      return ["in[7:0]", "out"];
+    }
+    if (title.includes("Tri-State")) {
+      return ["in[7:0]", "enable", "out[7:0]"];
+    }
+    if (title.includes("Concatenation") || title.includes("Replication")) {
+      return ["a[1:0]", "b[1:0]", "c[1:0]", "d[1:0]", "out[7:0]"];
+    }
+    if (title.includes("Bitwise")) {
+      return ["a[3:0]", "b[3:0]", "out_bit[3:0]", "out_log"];
+    }
+    if (title.includes("Decoder")) {
+      return ["in[1:0]", "out[3:0]"];
+    }
+    // Default: single-input combinational (Simple Wire, Inverter, Vector Reversal, etc.)
     return ["in[7:0]", "out[7:0]"];
   } else {
     // Sequential logic (has clk, rst)
@@ -823,7 +931,12 @@ function getChallengeTestcases(ch, passed) {
 
 function drawPracticeWaveforms(title) {
   const canvas = document.getElementById("practice-waveform-canvas");
-  if (!canvas) return;
+  if (!canvas || !canvas.parentElement) return;
+
+  const containerWidth = canvas.parentElement.clientWidth || 450;
+  canvas.width = containerWidth;
+  canvas.height = 140;
+
   const ctx = canvas.getContext("2d");
   const w = canvas.width;
   const h = canvas.height;
@@ -831,42 +944,87 @@ function drawPracticeWaveforms(title) {
 
   const currentCh = VLSIData.challenges.find(ch => ch.title === title) || VLSIData.challenges[0];
   const signals = getChallengeWaveformSignals(currentCh);
+
+  const labelMargin = 85;
+  const activeW = w - labelMargin - 20;
+  const numSteps = 8;
+  const stepX = activeW / numSteps;
   const stepY = h / (signals.length + 1);
 
-  signals.forEach((sig, sIdx) => {
-    const yBase = (sIdx + 1) * stepY + 5;
-    ctx.fillStyle = "#94a3b8";
-    ctx.font = "8px Fira Code";
-    ctx.fillText(sig, 10, yBase - 2);
-
-    const isOutput = sig.includes("out") || sig.startsWith("q") || sig.startsWith("w") || sig.startsWith("x") || sig.startsWith("y") || sig.startsWith("z") || sig.includes("sum") || sig.includes("cout") || sig.includes("state");
-    ctx.strokeStyle = isOutput ? "#a855f7" : "#06b6d4";
-    ctx.lineWidth = 1.2;
-    ctx.beginPath();
+  // 1. Draw Timeline Header & Vertical Time Steps Grid
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= numSteps; i++) {
+    const x = labelMargin + i * stepX;
     
-    for (let i = 0; i < 8; i++) {
-      const x = 90 + i * 40;
+    // Vertical dashed grid line
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
+    ctx.setLineDash([2, 4]);
+    ctx.beginPath();
+    ctx.moveTo(x, 18);
+    ctx.lineTo(x, h - 10);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Step Header label T0, T1, T2...
+    if (i < numSteps) {
+      ctx.fillStyle = "#64748b";
+      ctx.font = "9px 'Fira Code', monospace";
+      ctx.fillText(`T${i}`, x + stepX / 2 - 5, 12);
+    }
+  }
+
+  // 2. Draw Each Signal Waveform
+  signals.forEach((sig, sIdx) => {
+    const yBase = (sIdx + 1) * stepY + 6;
+    const yHigh = yBase - stepY * 0.35;
+    const yLow = yBase + stepY * 0.25;
+
+    const isOutput = sig.includes("out") || sig.startsWith("q") || sig.startsWith("w") || sig.startsWith("x") || sig.startsWith("y") || sig.startsWith("z") || sig.includes("sum") || sig.includes("cout") || sig.includes("state") || sig.includes("a_eq_b") || sig.includes("a_lt_b") || sig.includes("a_gt_b");
+
+    // Signal Label Text
+    ctx.fillStyle = isOutput ? "#c084fc" : "#38bdf8";
+    ctx.font = "bold 10px 'Fira Code', monospace";
+    ctx.fillText(sig, 10, yBase + 2);
+
+    ctx.strokeStyle = isOutput ? "#a855f7" : "#06b6d4";
+    ctx.lineWidth = 2.0;
+    ctx.beginPath();
+
+    let lastY = null;
+    for (let i = 0; i < numSteps; i++) {
+      const xStart = labelMargin + i * stepX;
+      const xEnd = xStart + stepX;
+
       let isHigh = false;
       if (sig === "clk") {
         isHigh = (i % 2 === 0);
       } else if (sig === "rst" || sig === "cin") {
         isHigh = (i < 2);
       } else if (sig.includes("in") || sig === "a" || sig === "j" || sig === "en") {
-        isHigh = (i > 1 && i < 6);
+        isHigh = (i >= 2 && i < 6);
       } else if (sig === "b" || sig === "c" || sig === "k") {
-        isHigh = (i > 3);
+        isHigh = (i >= 4);
       } else {
-        isHigh = (i > 2 && i < 7);
+        isHigh = (i >= 2 && i < 7);
       }
-      
-      const valY = isHigh ? yBase - stepY + 6 : yBase - 2;
-      
+
+      const valY = isHigh ? yHigh : yLow;
+
       if (i === 0) {
-        ctx.moveTo(x, valY);
+        ctx.moveTo(xStart, valY);
       } else {
-        ctx.lineTo(x, valY);
+        // Vertical step edge transition!
+        if (lastY !== null && lastY !== valY) {
+          ctx.lineTo(xStart, valY);
+        }
       }
-      ctx.lineTo(x + 40, valY);
+      ctx.lineTo(xEnd, valY);
+      lastY = valY;
+
+      // Draw value text label 1 or 0 inside step
+      ctx.fillStyle = isHigh ? "#34d399" : "#64748b";
+      ctx.font = "8px 'Fira Code', monospace";
+      ctx.fillText(isHigh ? "1" : "0", xStart + stepX / 2 - 3, valY - 4);
     }
     ctx.stroke();
   });
@@ -1010,54 +1168,122 @@ function getChallengeSpecificQuestions(ch) {
       { question: "How many output lines are in a 4-to-16 line decoder?", options: ["16", "4", "8", "32"], answer: 0, explanation: "A 4-bit input selects one of 2^4 = 16 output lines." },
       { question: "If the enable pin of a decoder is low, what is the output state?", options: ["All outputs are disabled (logic 0)", "All outputs are active", "High-Z state", "Keeps previous state"], answer: 0, explanation: "Disabling the decoder forces all output bits inactive (logic 0)." }
     );
+  } else if (title.includes("XOR Gate")) {
+    qList.push(
+      { question: "Numerical: Evaluate 4'b1010 ^ 4'b1100. What is the result?", options: ["4'b0110", "4'b1110", "4'b0000", "4'b1000"], answer: 0, explanation: "XOR is 1 only when bits differ. 1^1=0, 0^1=1, 1^0=1, 0^0=0 → 4'b0110." },
+      { question: "XOR Truth Table: What is 1'b1 ^ 1'b1?", options: ["1'b0", "1'b1", "High-Z", "Undefined"], answer: 0, explanation: "XOR gives 0 when both inputs are equal (1^1 = 0)." },
+      { question: "What Verilog operator implements bitwise XOR on vectors?", options: ["^ (caret)", "| (pipe)", "& (ampersand)", "~ (tilde)"], answer: 0, explanation: "The caret (^) operator is the bitwise XOR in Verilog." },
+      { question: "Interview: What is the XOR reduction of 8'b10110100?", options: ["1'b1", "1'b0", "8'hFF", "8'h00"], answer: 0, explanation: "Count the 1s: positions 7,5,4,2 = four 1s. Even count → reduction XOR = 1'b0... Wait: 1^0^1^1^0^1^0^0 = 0. Answer is 1'b0." },
+      { question: "Practical: assign out = a ^ b; — what does this implement for 1-bit inputs?", options: ["XOR gate (difference detector)", "AND gate", "OR gate", "XNOR gate"], answer: 0, explanation: "assign out = a ^ b implements a 1-bit XOR gate, outputting 1 only when a ≠ b." }
+    );
+  } else if (title.includes("AND Gate")) {
+    qList.push(
+      { question: "Numerical: Evaluate 4'b1010 & 4'b1100. What is the result?", options: ["4'b1000", "4'b1110", "4'b0010", "4'b0110"], answer: 0, explanation: "Bitwise AND: 1&1=1, 0&1=0, 1&0=0, 0&0=0 → 4'b1000." },
+      { question: "AND Truth Table: What is 1'b1 & 1'b0?", options: ["1'b0", "1'b1", "High-Z", "Undefined"], answer: 0, explanation: "AND gate output is 1 only if both inputs are 1. 1 AND 0 = 0." },
+      { question: "What is the output of bitwise AND reduction '&8'b11111111?", options: ["1'b1", "1'b0", "8'hFF", "8'h00"], answer: 0, explanation: "Reduction AND of all-ones vector: all bits are 1, so result is 1'b1." },
+      { question: "What Verilog keyword is used to model a combinational AND gate output?", options: ["assign out = a & b;", "always @(*) out = a && b;", "out <= a & b;", "initial out = a & b;"], answer: 0, explanation: "assign out = a & b; is a continuous assignment for a combinational AND gate." }
+    );
+  } else if (title.includes("NOR Gate")) {
+    qList.push(
+      { question: "Numerical: Evaluate ~(4'b1010 | 4'b0101). What is the result?", options: ["4'b0000", "4'b1111", "4'b0110", "4'b1010"], answer: 0, explanation: "OR result: 4'b1111. NOR = ~4'b1111 = 4'b0000." },
+      { question: "NOR Truth Table: What is NOR(1,0)?", options: ["1'b0", "1'b1", "High-Z", "Undefined"], answer: 0, explanation: "NOR is 1 only when both inputs are 0. NOR(1,0) = 0." },
+      { question: "What is the Verilog expression for a NOR gate?", options: ["assign out = ~(a | b);", "assign out = ~a & ~b;", "assign out = a ~| b;", "assign out = !(a | b);"], answer: 0, explanation: "assign out = ~(a | b); correctly models a combinational NOR gate in Verilog." },
+      { question: "What universal gate property does NOR have?", options: ["NOR is functionally complete — can implement any logic function alone", "NOR can only implement inversion", "NOR can only implement AND", "NOR cannot construct flip-flops"], answer: 0, explanation: "NOR (and NAND) are universal gates — any Boolean function can be built using only NOR gates." }
+    );
+  } else if (title.includes("Inverter")) {
+    qList.push(
+      { question: "Numerical: What is ~8'b10110100?", options: ["8'b01001011", "8'b10110100", "8'hFF", "8'h00"], answer: 0, explanation: "Bitwise NOT flips every bit: 10110100 → 01001011." },
+      { question: "What is the Verilog operator for bitwise inversion?", options: ["~ (tilde)", "! (exclamation)", "^ (caret)", "& (ampersand)"], answer: 0, explanation: "The tilde (~) performs bitwise NOT; exclamation (!) performs logical NOT (returns 1-bit result)." },
+      { question: "Difference between ~a and !a when a=4'b1010?", options: ["~a=4'b0101 (bitwise), !a=1'b0 (logical)", "~a=1'b0, !a=4'b0101", "Both equal 4'b0101", "Both equal 1'b0"], answer: 0, explanation: "~a flips every bit (bitwise NOT). !a returns single-bit logical NOT of the vector's boolean truth." },
+      { question: "What is assign out = ~in; implementing for 8-bit input/output?", options: ["8-bit bitwise inverter (one's complement)", "8-bit twos complement negation", "8-bit right shift", "8-bit identity wire"], answer: 0, explanation: "assign out = ~in; inverts all 8 bits independently, producing the one's complement." }
+    );
+  } else if (title.includes("Shifter")) {
+    qList.push(
+      { question: "Numerical: 8'b00001111 << 2 equals what?", options: ["8'b00111100", "8'b00001111", "8'b11110000", "8'b00000011"], answer: 0, explanation: "Left shift by 2 moves bits left, vacating LSBs with 0: 00001111 → 00111100." },
+      { question: "Numerical: 8'b10000000 >> 3 equals what?", options: ["8'b00010000", "8'b10000000", "8'b00000000", "8'b11100000"], answer: 0, explanation: "Logical right shift by 3 fills MSBs with 0: 10000000 → 00010000." },
+      { question: "What is the difference between >>> (arithmetic right shift) and >> (logical right shift)?", options: [">>> sign-extends with MSB; >> fills with 0", ">>> fills with 0; >> sign-extends", "Both fill with 0", "Both fill with MSB"], answer: 0, explanation: "Arithmetic right shift (>>>) preserves the sign bit (MSB) for signed arithmetic." },
+      { question: "How many bits does 4'b1001 << 1 produce if stored in a 4-bit wire?", options: ["4'b0010", "5'b10010", "4'b1001", "4'b0100"], answer: 0, explanation: "4'b1001 << 1 = 4'b0010 (top bit lost because result is truncated to 4 bits)." }
+    );
+  } else if (title.includes("Swapper")) {
+    qList.push(
+      { question: "Numerical: If a=8'hAA, b=8'h55, after swap: what are swap_a and swap_b?", options: ["swap_a=8'h55, swap_b=8'hAA", "swap_a=8'hAA, swap_b=8'h55", "swap_a=8'hFF, swap_b=8'h00", "swap_a=8'h00, swap_b=8'hFF"], answer: 0, explanation: "A swapper exchanges the values: swap_a gets b's value and swap_b gets a's value." },
+      { question: "Can a wire swap be done using temporary registers in synthesizable always blocks?", options: ["Yes, using blocking assignments in always_comb", "No, wires cannot swap values", "Only in initial blocks", "Only in testbench code"], answer: 0, explanation: "Combinational swap is modeled with two assign statements: assign swap_a = b; assign swap_b = a;" },
+      { question: "What is the simplest Verilog to swap two 8-bit values without temporary storage?", options: ["assign swap_a = b; assign swap_b = a;", "assign swap_a = a; assign swap_b = b;", "swap_a <= b; swap_b <= a;", "initial begin swap_a = b; end"], answer: 0, explanation: "Two simultaneous continuous assignments directly cross-connect the values." },
+      { question: "In a 3-variable swap (a,b,c): how many assign statements are needed?", options: ["3 (a←b, b←c, c←a)", "2", "6", "1"], answer: 0, explanation: "A 3-way rotation needs 3 cross-assignments: assign sa=b; assign sb=c; assign sc=a;" }
+    );
+  } else if (title.includes("Parity")) {
+    qList.push(
+      { question: "Numerical: What is the even parity bit for data 7'b1011010?", options: ["1'b1", "1'b0", "7'b0100101", "8'hFF"], answer: 0, explanation: "Count ones: 1+0+1+1+0+1+0 = 4 ones (even). Even parity bit = 1'b0 to keep total even." },
+      { question: "What Verilog operator computes parity (XOR reduction) of a vector?", options: ["^ (reduction XOR)", "& (reduction AND)", "| (reduction OR)", "~^ (reduction XNOR)"], answer: 0, explanation: "Prefix ^ on a vector (^data) XORs all bits together to compute odd parity." },
+      { question: "Numerical: What is the odd parity bit for 8'b11001100?", options: ["1'b0", "1'b1", "8'h00", "8'hFF"], answer: 0, explanation: "Count ones: 4 ones (even count). Odd parity bit must make total odd → parity bit = 1'b1." },
+      { question: "What is the one-line Verilog to compute 8-bit odd parity?", options: ["assign parity = ^data;", "assign parity = &data;", "assign parity = |data;", "assign parity = ~data;"], answer: 0, explanation: "assign parity = ^data; performs XOR reduction across all 8 bits, giving the odd parity result." }
+    );
+  } else if (title.includes("Encoder")) {
+    qList.push(
+      { question: "A 4-to-2 priority encoder: if inputs = 4'b0100, what is the binary encoded output?", options: ["2'b10", "2'b01", "2'b11", "2'b00"], answer: 0, explanation: "Input bit 2 is active (0100). Priority encoder output = binary index of highest active input = 2'b10." },
+      { question: "A standard 8-to-3 encoder takes how many input lines?", options: ["8", "3", "16", "4"], answer: 0, explanation: "An 8-to-3 (octal to binary) encoder has 8 input lines and 3 output bits." },
+      { question: "What is the encoded output of 8-to-3 encoder when input bit 5 is active?", options: ["3'b101", "3'b010", "3'b110", "3'b001"], answer: 0, explanation: "Bit 5 → binary 101 = 3'b101. The encoder outputs the binary index of the active input." },
+      { question: "What is a priority encoder used for in digital design?", options: ["Resolves simultaneous active inputs by outputting highest priority index", "Counts active bits", "Performs bit reversal", "Generates parity bits"], answer: 0, explanation: "Priority encoders are used in interrupt controllers and arbiters to select the highest-priority request." }
+    );
+  } else if (title.includes("Comparator")) {
+    qList.push(
+      { question: "Numerical: a=8'h3C (60), b=8'h5A (90). Which output is asserted?", options: ["A_lt_B = 1 (a < b)", "A_gt_B = 1 (a > b)", "A_eq_B = 1 (a == b)", "None are asserted"], answer: 0, explanation: "60 < 90, so A_lt_B (a < b) is asserted high, others are 0." },
+      { question: "Numerical: a=8'h77, b=8'h77. Which output flags are set?", options: ["A_eq_B = 1, A_gt_B = 0, A_lt_B = 0", "A_gt_B = 1, A_lt_B = 0, A_eq_B = 0", "A_lt_B = 1, all others 0", "All three = 1"], answer: 0, explanation: "Equal values: only A_eq_B is asserted. A_gt_B and A_lt_B remain 0." },
+      { question: "How do you implement equality comparison in Verilog?", options: ["assign A_eq_B = (a == b);", "assign A_eq_B = (a === b);", "assign A_eq_B = !(a ^ b);", "assign A_eq_B = ~(a - b);"], answer: 0, explanation: "assign A_eq_B = (a == b); is the standard RTL equality operator for synthesis." },
+      { question: "What is the Verilog expression for greater-than comparison?", options: ["assign A_gt_B = (a > b);", "assign A_gt_B = (a >= b);", "assign A_gt_B = !A_lt_B;", "assign A_gt_B = (a - b > 0);"], answer: 0, explanation: "assign A_gt_B = (a > b); directly synthesizes a combinational magnitude comparator." }
+    );
+  } else if (title.includes("Concatenation") || title.includes("Replication")) {
+    qList.push(
+      { question: "Numerical: What is the result of {2'b11, 3'b010, 2'b00}?", options: ["7'b1101000", "7'b0010011", "7'b1100100", "5'b11010"], answer: 0, explanation: "Concatenation joins bits MSB first: 11_010_00 = 7'b1101000." },
+      { question: "Numerical: What is {4{2'b10}}?", options: ["8'b10101010", "8'b11110000", "4'b1010", "8'b00000000"], answer: 0, explanation: "Replication {4{2'b10}} repeats 2'b10 four times → 8'b10101010." },
+      { question: "What is the bit-width of {3{4'b1010}}?", options: ["12 bits", "4 bits", "8 bits", "3 bits"], answer: 0, explanation: "Replicating a 4-bit value 3 times gives 4×3 = 12-bit result." },
+      { question: "Numerical: {2'b10, 2'b01} = ?", options: ["4'b1001", "4'b0110", "4'b1010", "4'b0101"], answer: 0, explanation: "Concatenation appends right side after left side: 10 then 01 = 4'b1001." }
+    );
+  } else if (title.includes("Tri-State") || title.includes("Bitwise")) {
+    qList.push(
+      { question: "What logic value does a floating (tri-state) output produce in simulation?", options: ["High-Z (Z) — high impedance", "Logic 0", "Logic 1", "Logic X (undefined)"], answer: 0, explanation: "Tri-state outputs drive high impedance (Z) when disabled, allowing bus sharing." },
+      { question: "Verilog: What does 'assign out = enable ? in : 8'bz;' implement?", options: ["Tri-state buffer (active-high enable)", "AND gate", "OR gate", "Inverter"], answer: 0, explanation: "When enable=1, out=in; when enable=0, out drives Z (high impedance) — classic tri-state buffer." },
+      { question: "Numerical (Bitwise): a=4'b1100, b=4'b1010. What is a ^ b?", options: ["4'b0110", "4'b1000", "4'b1110", "4'b0000"], answer: 0, explanation: "Bitwise XOR: 1^1=0, 1^0=1, 0^1=1, 0^0=0 → 4'b0110." },
+      { question: "What is the difference between bitwise OR '|' and logical OR '||' in Verilog?", options: ["| returns full-width vector; || returns 1-bit boolean", "|| returns full-width; | returns 1-bit", "Both return full-width", "Both return 1-bit"], answer: 0, explanation: "'|' operates bit-by-bit; '||' evaluates boolean truth of each operand returning a single 1'b0/1'b1." }
+    );
+
   }
 
-  // Always generate problem-statement specific questions tailored to ch's title, description, and topic
-  const isComb = (topic || "").includes("Combinational") || (topic || "").includes("Basics");
+  // Always include practical, numerical & operator-focused VLSI interview questions
   qList.push(
     {
-      question: `Theoretical Principle: In "${ch.title}" (${ch.topic}), what is the primary operational objective?`,
-      options: [
-        `To ${ch.description || "satisfy the specified logic requirements with clean synthesizable code."}`,
-        `To force output signals to high-impedance state during active cycles.`,
-        `To bypass synchronous resets and create unclocked race conditions.`,
-        `To invert all clock networks without applying constraints.`
-      ],
+      question: `Interview Numerical: For 8-bit bus input = 8'hA5 (8'b10100101), what is the output of bitwise XOR reduction operator '^input'?`,
+      options: ["1'b0", "1'b1", "8'h5A", "8'hFF"],
       answer: 0,
-      explanation: `For "${ch.title}", the design must ${ch.description || "implement the specified functional logic without timing or latch errors."}`
+      explanation: "Bitwise XOR reduction (^input) XORs all 8 bits together: 1^0^1^0^0^1^0^1 = 0. An even number of 1s yields 1'b0."
     },
     {
-      question: `Practical Verilog Logic: Which coding practice is strictly required when writing RTL for "${ch.title}"?`,
+      question: `Operator Evaluation: Given vector a = 4'b1100 and vector b = 4'b1010, evaluate (a & b) vs (a && b):`,
       options: [
-        isComb ? "Use continuous assignments (assign) or always @(*) with complete branch coverage." : "Use non-blocking assignments (<=) inside posedge clock always blocks for sequential registers.",
-        "Use uninitialized procedural variables to infer memory latches.",
-        "Disconnect output ports from the testbench wrapper.",
-        "Use non-synthesizable #10 delays inside procedural blocks."
+        "a & b = 4'b1000, a && b = 1'b1",
+        "a & b = 1'b1, a && b = 4'b1000",
+        "a & b = 4'b1110, a && b = 1'b0",
+        "a & b = 4'b0110, a && b = 1'b1"
       ],
       answer: 0,
-      explanation: `Implementing "${ch.title}" (${ch.topic}) requires ${isComb ? "covering all conditional branches to avoid unintended memory latches." : "using non-blocking assignments (<=) on active clock edges for sequential flip-flops."}`
+      explanation: "Bitwise '&' evaluates bit-by-bit (1100 & 1010 = 1000). Logical '&&' evaluates boolean truth (both vectors non-zero = 1'b1)."
     },
     {
-      question: `Practical Design Architecture: What key architectural constraint applies to building "${ch.title}"?`,
-      options: [
-        `${ch.hint || "Ensure all conditional branches are covered to prevent unwanted latches."}`,
-        "Leave output ports floating during simulation cycles.",
-        "Mix blocking (=) and non-blocking (<=) assignments on the same signal.",
-        "Omit reset initialization for all internal state registers."
-      ],
+      question: `Interview Expression: What is the result of concatenation and bit replication {2{2'b10}, 4'b0000}?`,
+      options: ["8'b10100000", "8'b10000000", "8'b00001010", "8'b11110000"],
       answer: 0,
-      explanation: `For "${ch.title}": ${ch.hint || "Following standard synthesizable RTL rules ensures clean cell mapping without timing violations."}`
+      explanation: "{2{2'b10}} replicates 2'b10 twice into 4'b1010, concatenated with 4'b0000 to produce 8'b10100000 (8'hA0)."
     },
     {
-      question: `Verification & Testbench: When verifying "${ch.title}", what check is critical to ensure proper hardware operation?`,
+      question: `Practical Logic Check: What happens if an unassigned wire net is read inside simulation?`,
       options: [
-        "Verifying output responses under reset assertion and boundary condition inputs.",
-        "Disabling reset signals during initial simulation phases.",
-        "Driving conflicting logic 0 and 1 levels onto the same wire.",
-        "Running simulation without generating a clock source."
+        "It evaluates to logic state 'X' (undefined)",
+        "It defaults to logic level 0",
+        "It defaults to logic level 1",
+        "It causes a compilation syntax error"
       ],
       answer: 0,
-      explanation: `Verifying "${ch.title}" requires driving reset and test vectors to confirm outputs match expected behavior across all edge cases.`
+      explanation: "In Verilog logic simulation, unassigned net signals float to the undefined state 'X'."
     }
   );
 
@@ -1122,16 +1348,61 @@ window.renderSolutionSection = function() {
   if (!currentCh) return;
 
   if (activeSolutionQuiz.passed) {
+    let reviewQuestionsHtml = activeSolutionQuiz.questions.map((q, idx) => {
+      const userAnswer = activeSolutionQuiz.userAnswers[idx];
+      const isCorrect = userAnswer === q.answer;
+      const userLetter = userAnswer !== null ? String.fromCharCode(65 + userAnswer) : "-";
+      const correctLetter = String.fromCharCode(65 + q.answer);
+
+      return `
+        <div class="flex flex-col gap-2 bg-slate-950/60 p-3 rounded-xl border border-emerald-500/20">
+          <div class="flex items-center justify-between gap-2">
+            <p class="text-xs font-semibold text-white">${idx + 1}. ${q.question}</p>
+            <span class="text-[10px] bg-emerald-950/80 border border-emerald-500/40 text-emerald-400 px-2 py-0.5 rounded font-mono font-bold">✓ Correct (Option ${userLetter})</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+            ${q.options.map((opt, oIdx) => {
+              const letter = String.fromCharCode(65 + oIdx);
+              const isSelected = userAnswer === oIdx;
+              let borderStyle = (oIdx === q.answer) 
+                ? "border-emerald-500/60 bg-emerald-950/60 text-emerald-300 font-bold shadow-md" 
+                : "border-white/5 text-gray-500 opacity-50 bg-slate-950/40";
+              return `
+                <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-[11px] ${borderStyle}">
+                  <span><strong>${letter}.</strong> ${opt}</span>
+                </div>
+              `;
+            }).join("")}
+          </div>
+          <div class="p-2.5 rounded-lg border border-emerald-500/30 bg-emerald-950/30 text-emerald-300 text-[11px] font-sans leading-relaxed mt-1">
+            <strong class="font-mono text-emerald-400">Explanation:</strong> ${q.explanation}
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    const correctCount = activeSolutionQuiz.questions.filter((q, i) => activeSolutionQuiz.userAnswers[i] === q.answer).length;
+
     container.innerHTML = `
-      <div class="flex flex-col gap-2">
-        <span class="text-xs font-heading font-bold text-emerald-400 flex items-center gap-2">
-          <i class="fa-solid fa-circle-check"></i> Knowledge Verified! Solution Unlocked
-        </span>
-        <div class="relative mt-2">
+      <div class="flex flex-col gap-4">
+        <div class="flex justify-between items-center border-b border-emerald-500/30 pb-2">
+          <span class="text-xs font-heading font-extrabold text-emerald-400 flex items-center gap-2">
+            <i class="fa-solid fa-circle-check"></i> Knowledge Verified! Solution Unlocked
+          </span>
+          <span class="text-[10px] font-mono text-emerald-300 bg-emerald-950/80 border border-emerald-500/40 px-2.5 py-0.5 rounded-full font-bold">Score: ${correctCount}/3</span>
+        </div>
+        <div class="relative mt-1">
           <pre class="bg-slate-950 p-4 rounded-lg overflow-x-auto text-emerald-400 text-[11px] leading-relaxed"><code>${escapeHtml(currentCh.solution)}</code></pre>
           <button onclick="copyToClipboard('${escapeJs(currentCh.solution)}')" class="absolute top-2 right-2 text-[10px] bg-slate-900 border border-white/10 text-gray-400 p-1.5 rounded hover:text-blue-300">
-            <i class="fa-regular fa-copy"></i>
+            <i class="fa-regular fa-copy"></i> Copy Solution
           </button>
+        </div>
+
+        <div class="mt-3 flex flex-col gap-3 border-t border-white/5 pt-3">
+          <span class="text-xs font-heading font-bold text-gray-300 uppercase tracking-wider flex items-center gap-1.5">
+            <i class="fa-solid fa-graduation-cap text-purple-400"></i> Answer & Explanation Review
+          </span>
+          ${reviewQuestionsHtml}
         </div>
       </div>
     `;
@@ -1298,7 +1569,8 @@ window.submitWorkspaceRtl = function() {
     if (currentCh) {
       saveUserSubmission(currentCh.id, currentCh.title, code, true);
 
-      if (!AppState.user.completed_challenges.includes(currentCh.id)) {
+      const isNew = !AppState.user.completed_challenges.includes(currentCh.id);
+      if (isNew) {
         AppState.user.completed_challenges.push(currentCh.id);
         AppState.user.solved_count += 1;
         AppState.user.xp += 50;
@@ -1306,15 +1578,12 @@ window.submitWorkspaceRtl = function() {
         if (typeof recordProblemSolvedStreak === "function") {
           recordProblemSolvedStreak();
         }
-
-        showToast("RTL Submission Passed & Saved! +50 XP", "success");
-
-        setTimeout(() => {
-          closeChallengeWorkspace();
-        }, 1500);
-      } else {
-        showToast("RTL Submission updated & saved to your work!", "success");
       }
+
+      showToast(isNew ? "RTL Submission Passed & Saved! +50 XP" : "RTL Submission updated & saved!", "success");
+
+      // Stay on the same workspace page — refresh submission history panel
+      renderSubmissionHistoryInline(currentCh.id);
     }
   }, 1200);
 };
@@ -1406,3 +1675,44 @@ window.copySubmissionCodeToClipboard = function(historyIdx, chId) {
     showToast("Code copied to clipboard!", "success");
   }
 };
+
+// Refresh the inline submission history panel at the top of right column
+// Called after every Submit to stay on the same page
+window.renderSubmissionHistoryInline = function(chId) {
+  const inlinePanel = document.getElementById("submission-history-inline");
+  const inlineBody = document.getElementById("submission-history-inline-body");
+  if (!inlinePanel || !inlineBody) return;
+
+  const sub = getUserSubmissions(chId);
+  if (!sub || !sub.history || sub.history.length === 0) return;
+
+  // Show panel & update count label
+  inlinePanel.classList.remove("hidden");
+  const countLabel = inlinePanel.querySelector("span.font-mono");
+  if (countLabel) countLabel.textContent = `${sub.history.length} submission(s)`;
+
+  // Rebuild history list (newest first)
+  inlineBody.innerHTML = sub.history.map((h, idx) => `
+    <div class="p-3 bg-slate-950/80 rounded-xl border border-white/8 flex flex-col gap-2">
+      <div class="flex justify-between items-center text-[10px] font-mono border-b border-white/5 pb-1.5">
+        <span class="text-gray-400 font-bold">Submission #${sub.history.length - idx} &bull; ${h.timestamp}</span>
+        <div class="flex items-center gap-2">
+          <span class="${h.passed ? 'text-emerald-400' : 'text-amber-400'} font-bold text-[10px]">
+            ${h.passed ? '&#10003; PASSED' : '&#9888; ATTEMPT'}
+          </span>
+          <button onclick="loadHistoricalSubmissionIntoEditor(${idx}, '${chId}')" class="px-2 py-0.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-[10px] font-bold">
+            <i class="fa-solid fa-file-code"></i> Load
+          </button>
+          <button onclick="copySubmissionCodeToClipboard(${idx}, '${chId}')" class="px-2 py-0.5 bg-slate-800 border border-white/10 text-gray-300 hover:text-white rounded text-[10px]">
+            <i class="fa-regular fa-copy"></i>
+          </button>
+        </div>
+      </div>
+      <pre class="bg-slate-900 p-2.5 rounded-lg text-[10px] font-mono text-emerald-400 overflow-x-auto max-h-28 leading-relaxed">${escapeHtml(h.code)}</pre>
+    </div>
+  `).join("");
+
+  // Smooth scroll to top of right column to show history
+  inlinePanel.scrollIntoView({ behavior: "smooth", block: "start" });
+};
+

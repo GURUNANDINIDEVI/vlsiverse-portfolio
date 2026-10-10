@@ -91,7 +91,7 @@ window.renderHome = function() {
         ${renderFeatureCard("Digital Practice Arena", "Interactive 200+ GATE & Semiconductor exam level questions with SVG diagrams and solutions.", "fa-layer-group", "from-purple-650 to-pink-500", "digital-practice")}
         ${renderFeatureCard("Protocol Explorer", "Deep-dive into AXI, APB, AHB, SPI, UART, I2C, PCIe, USB, and CAN.", "fa-circle-nodes", "from-cyan-500 to-blue-500", "protocols")}
         ${renderFeatureCard("VLSI Studio", "Interactive step-by-step ASIC Engineering pipeline flow explorer.", "fa-diagram-project", "from-pink-500 to-rose-500", "studio")}
-        ${renderFeatureCard("Silicon Projects", "Complete system-level hardware design projects with full RTL source code.", "fa-folder-open", "from-amber-500 to-orange-500", "projects")}
+        ${renderFeatureCard("Silicon Projects", "Explore system-level VLSI projects with architecture, RTL examples, implementation guidance, and verification concepts.", "fa-folder-open", "from-amber-500 to-orange-500", "projects")}
         ${renderFeatureCard("Interview Prep", "Interactive 3D flashcards, MCQs, and syllabus challenge quizzes.", "fa-user-tie", "from-blue-500 to-purple-600", "interviews")}
       </div>
     </div>
@@ -173,13 +173,17 @@ window.renderHome = function() {
       <h3 class="text-lg font-heading font-bold text-white mb-1">Get in Touch</h3>
       <p class="text-xs text-gray-500 mb-6 font-sans">We'd love to hear from you</p>
       
-      <!-- Social icons row (Twitter removed) -->
+      <!-- Social icons row (GitHub, LinkedIn, Email) -->
       <div class="flex items-center justify-center gap-4">
-        ${["github", "linkedin", "envelope"].map(icon => `
-          <button class="w-10 h-10 rounded-full bg-[#0b0f19] border border-white/5 hover:border-blue-500/25 flex items-center justify-center text-gray-400 hover:text-white transition-all">
-            <i class="${icon === 'envelope' ? 'fa-solid fa-envelope' : 'fa-brands fa-' + icon} text-sm"></i>
-          </button>
-        `).join("")}
+        <a href="https://github.com/GURUNANDINIDEVI/vlsiverse-portfolio" target="_blank" rel="noopener noreferrer" aria-label="GitHub" class="w-10 h-10 rounded-full bg-[#0b0f19] border border-white/5 hover:border-blue-500/25 flex items-center justify-center text-gray-400 hover:text-white transition-all">
+          <i class="fa-brands fa-github text-sm"></i>
+        </a>
+        <a href="https://linkedin.com/in/gurunandinidevi" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" class="w-10 h-10 rounded-full bg-[#0b0f19] border border-white/5 hover:border-blue-500/25 flex items-center justify-center text-gray-400 hover:text-white transition-all">
+          <i class="fa-brands fa-linkedin text-sm"></i>
+        </a>
+        <a href="mailto:nandinidevitekumudi@gmail.com" aria-label="Email" class="w-10 h-10 rounded-full bg-[#0b0f19] border border-white/5 hover:border-blue-500/25 flex items-center justify-center text-gray-400 hover:text-white transition-all">
+          <i class="fa-solid fa-envelope text-sm"></i>
+        </a>
       </div>
 
       <!-- Creator Credit Signature -->
