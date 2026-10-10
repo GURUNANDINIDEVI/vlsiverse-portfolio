@@ -17,7 +17,7 @@
         supabaseInstance = window.supabase.createClient(url, key);
         console.log("[VLSIVerse] Connected to Supabase PostgreSQL Database Server.");
       } catch(e) {
-        console.warn("[VLSIVerse] Supabase client initialization fallback:", e);
+        console.warn("[VLSIVerse] Supabase client initialization notice:", e);
       }
     }
     return supabaseInstance;
@@ -66,7 +66,6 @@
   function saveLocalLoginEvents(events) {
     localStorage.setItem(DB_LOGINS_KEY, JSON.stringify(events));
   }
-
   function detectDeviceType() {
     const ua = navigator.userAgent || "";
     if (/mobile/i.test(ua)) return "Mobile";
@@ -92,6 +91,7 @@
       const cleanEmail = email.trim().toLowerCase();
       const userName = name.trim() || cleanEmail.split("@")[0];
 
+<<<<<<< HEAD
       if (client) {
         // Real Supabase Auth SignUp
         const { data, error } = await client.auth.signUp({
@@ -141,12 +141,41 @@
 
         return { user: { id: newProfile.id, email: newProfile.email }, profile: newProfile };
       }
+=======
+      if (!client) {
+        throw new Error("Unable to connect to database registration server. Please check your internet connection.");
+      }
+
+      // Real Supabase Auth SignUp
+      const { data, error } = await client.auth.signUp({
+        email: cleanEmail,
+        password: password,
+        options: { data: { name: userName } }
+      });
+      if (error) throw error;
+      const user = data.user;
+
+      // Upsert database profile record
+      const profile = {
+        id: user.id,
+        name: userName,
+        email: cleanEmail,
+        role: "user",
+        created_at: user.created_at || new Date().toISOString(),
+        last_login_at: null,
+        login_count: 0,
+        account_status: "active"
+      };
+      await client.from("Profiles").upsert(profile);
+      return { user, profile };
+>>>>>>> 36fc80c3555dba7b8309e3094200618edf91f93f
     },
 
     signIn: async function(email, password) {
       const client = initSupabase();
       const cleanEmail = email.trim().toLowerCase();
 
+<<<<<<< HEAD
       if (client) {
         // Real Supabase Auth SignIn
         const { data, error } = await client.auth.signInWithPassword({
@@ -185,11 +214,61 @@
           }).eq("id", user.id);
         }
 
+=======
+      if (!client) {
+        throw new Error("Unable to connect to database authentication server. Please check your internet connection.");
+      }
+
+      // Real Supabase Auth SignIn
+      const { data, error } = await client.auth.signInWithPassword({
+        email: cleanEmail,
+        password: password
+      });
+      if (error) throw error;
+      const user = data.user;
+
+      // Fetch user profile from PostgreSQL
+      const { data: profileData, error: profileErr } = await client
+        .from("Profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      let profile = profileData;
+
+      if (!profile) {
+        profile = {
+          id: user.id,
+          name: user.user_metadata?.name || cleanEmail.split("@")[0],
+          email: cleanEmail,
+          role: "user",
+          created_at: user.created_at || new Date().toISOString(),
+          last_login_at: new Date().toISOString(),
+          login_count: 1,
+          account_status: "active"
+        };
+        await client.from("Profiles").insert(profile);
+      } else {
+        if (profile.account_status === "blocked") {
+          await client.auth.signOut();
+          throw new Error("Account Access Revoked: Your access has been suspended by the administrator.");
+        }
+        profile.last_login_at = new Date().toISOString();
+        profile.login_count = (profile.login_count || 0) + 1;
+        await client.from("Profiles").update({
+          last_login_at: profile.last_login_at,
+          login_count: profile.login_count
+        }).eq("id", user.id);
+      }
+
+      try {
+>>>>>>> 36fc80c3555dba7b8309e3094200618edf91f93f
         await client.from("login_events").insert({
           user_id: user.id,
           logged_in_at: new Date().toISOString(),
           device_type: detectDeviceType()
         });
+<<<<<<< HEAD
 
         return { user, profile };
       } else {
@@ -231,6 +310,13 @@
 
         return { user: { id: profile.id, email: profile.email }, profile };
       }
+=======
+      } catch (evtErr) {
+        console.warn("[VLSIVerse] Login event tracking notice:", evtErr);
+      }
+
+      return { user, profile };
+>>>>>>> 36fc80c3555dba7b8309e3094200618edf91f93f
     },
 
     signOut: async function() {
@@ -259,7 +345,11 @@
             };
           }
         } catch(e) {
+<<<<<<< HEAD
           console.warn("[VLSIVerse] Get session error:", e);
+=======
+          console.warn("[VLSIVerse] Get session notice:", e);
+>>>>>>> 36fc80c3555dba7b8309e3094200618edf91f93f
         }
       }
       return null;
@@ -268,6 +358,7 @@
     // --- Admin User Analytics & Query APIs ---
     fetchAdminAnalytics: async function() {
       const client = initSupabase();
+<<<<<<< HEAD
 
       if (client) {
         const { data: profiles, error: pErr } = await client.from("Profiles").select("*");
@@ -281,6 +372,18 @@
         const events = getLocalLoginEvents();
         return calculateAnalytics(profiles, events);
       }
+=======
+      if (!client) {
+        return calculateAnalytics([], []);
+      }
+
+      const { data: profiles, error: pErr } = await client.from("Profiles").select("*");
+      if (pErr) throw pErr;
+      const { data: events, error: eErr } = await client.from("login_events").select("*");
+      if (eErr) throw eErr;
+
+      return calculateAnalytics(profiles || [], events || []);
+>>>>>>> 36fc80c3555dba7b8309e3094200618edf91f93f
     },
 
     fetchRegisteredUsers: async function(options = {}) {
@@ -292,13 +395,20 @@
         const { data, error } = await client.from("Profiles").select("*");
         if (error) throw error;
         profiles = data || [];
+<<<<<<< HEAD
       } else {
         profiles = getLocalProfiles();
+=======
+>>>>>>> 36fc80c3555dba7b8309e3094200618edf91f93f
       }
 
       // Filter
       let filtered = profiles.filter(p => {
+<<<<<<< HEAD
         const matchSearch = !search || p.name.toLowerCase().includes(search.toLowerCase()) || p.email.toLowerCase().includes(search.toLowerCase());
+=======
+        const matchSearch = !search || (p.name && p.name.toLowerCase().includes(search.toLowerCase())) || (p.email && p.email.toLowerCase().includes(search.toLowerCase()));
+>>>>>>> 36fc80c3555dba7b8309e3094200618edf91f93f
         if (!matchSearch) return false;
 
         if (filter === "Users") return p.role === "user";
@@ -317,8 +427,13 @@
 
       // Sort
       filtered.sort((a, b) => {
+<<<<<<< HEAD
         if (sort === "newest") return new Date(b.created_at) - new Date(a.created_at);
         if (sort === "oldest") return new Date(a.created_at) - new Date(b.created_at);
+=======
+        if (sort === "newest") return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+        if (sort === "oldest") return new Date(a.created_at || 0) - new Date(b.created_at || 0);
+>>>>>>> 36fc80c3555dba7b8309e3094200618edf91f93f
         if (sort === "latest_login") return new Date(b.last_login_at || 0) - new Date(a.last_login_at || 0);
         if (sort === "most_logins") return (b.login_count || 0) - (a.login_count || 0);
         return 0;
@@ -329,6 +444,7 @@
 
     updateUserProfile: async function(userId, updates) {
       const client = initSupabase();
+<<<<<<< HEAD
 
       if (client) {
         const { data, error } = await client.from("Profiles").update(updates).eq("id", userId).select();
@@ -343,6 +459,13 @@
         }
         return user;
       }
+=======
+      if (!client) throw new Error("Supabase client not initialized.");
+
+      const { data, error } = await client.from("Profiles").update(updates).eq("id", userId).select();
+      if (error) throw error;
+      return data;
+>>>>>>> 36fc80c3555dba7b8309e3094200618edf91f93f
     }
   };
 
@@ -397,4 +520,8 @@
   }
 
   window.VLSISupabase = VLSISupabase;
+<<<<<<< HEAD
 })(window);
+=======
+})(window);
+>>>>>>> 36fc80c3555dba7b8309e3094200618edf91f93f

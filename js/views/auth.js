@@ -285,7 +285,13 @@ window.handleAuthSubmit = async function(e) {
       );
     }
 
-    if (window.navigateTo) window.navigateTo("dashboard");
+    if (window.navigateTo) {
+      if (AppState.user.role === "admin") {
+        window.navigateTo("admin");
+      } else {
+        window.navigateTo("dashboard");
+      }
+    }
   } catch(err) {
     console.error("[VLSIVerse Auth Error]:", err);
     if (window.showToast) {

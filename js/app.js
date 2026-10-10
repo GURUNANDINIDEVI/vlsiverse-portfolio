@@ -64,15 +64,23 @@ function showToast(message, type = "success") {
   }, 3500);
 }
 
-// Router dispatch
+// Router dispatch with strict Admin Authorization Guard
 function navigateTo(viewId) {
+  if (viewId === "admin" && !isUserAdmin()) {
+    showToast("Access Denied: Admin authorization required.", "error");
+    viewId = AppState.user.signedIn ? "dashboard" : "auth";
+  }
   AppState.currentView = viewId;
   window.location.hash = viewId;
   renderApp();
 }
 
 window.addEventListener("hashchange", () => {
-  const hash = window.location.hash.substring(1) || "home";
+  let hash = window.location.hash.substring(1) || "home";
+  if (hash === "admin" && !isUserAdmin()) {
+    showToast("Access Denied: Admin authorization required.", "error");
+    hash = AppState.user.signedIn ? "dashboard" : "auth";
+  }
   if (routes[hash]) {
     AppState.currentView = hash;
     renderApp();

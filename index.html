@@ -68,7 +68,11 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
   <!-- Custom Stylesheets -->
+<<<<<<< HEAD
   <link rel="stylesheet" href="css/styles.css?v=120">
+=======
+  <link rel="stylesheet" href="css/styles.css?v=94">
+>>>>>>> 36fc80c3555dba7b8309e3094200618edf91f93f
 </head>
 <body class="bg-[#05070f] text-gray-200 min-h-screen grid-bg">
 
@@ -124,5 +128,113 @@
   <!-- Application Shell Router -->
   <script src="js/app.js?v=120"></script>
 
+<!-- Obsidian Liquid Glass Cursor (Dynamic Physics Fixed) -->
+<style>
+  * {
+    cursor: none !important;
+  }
+  #cursor-point {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #ffffff;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.9);
+    pointer-events: none;
+    z-index: 100000;
+    transform: translate(-50%, -50%);
+    will-change: transform;
+  }
+  #cursor-capsule {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 99999;
+    will-change: transform, width, height;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), inset 0 0 8px rgba(255, 255, 255, 0.14);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+</style>
+
+<div id="cursor-point"></div>
+<div id="cursor-capsule"></div>
+
+<script>
+  (function() {
+    const point = document.getElementById('cursor-point');
+    const capsule = document.getElementById('cursor-capsule');
+    if (!point || !capsule) return;
+
+    let mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+    let smooth = { x: mouse.x, y: mouse.y };
+    let prevMouse = { x: mouse.x, y: mouse.y };
+    let velocity = { x: 0, y: 0 };
+    let isHover = false;
+
+    window.addEventListener('mousemove', (e) => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+      point.style.transform = `translate(${mouse.x}px, ${mouse.y}px) translate(-50%, -50%)`;
+    });
+
+    window.addEventListener('mousedown', () => {
+      capsule.style.borderColor = 'rgba(255, 255, 255, 0.8)';
+    });
+    window.addEventListener('mouseup', () => {
+      capsule.style.borderColor = 'rgba(255, 255, 255, 0.28)';
+    });
+
+    function bindInteractive() {
+      document.querySelectorAll('a, button, [role="button"], input, select').forEach(el => {
+        el.addEventListener('mouseenter', () => { isHover = true; });
+        el.addEventListener('mouseleave', () => { isHover = false; });
+      });
+    }
+    bindInteractive();
+    setTimeout(bindInteractive, 1000);
+
+    function render() {
+      // Calculate instantaneous movement vector
+      const vx = mouse.x - prevMouse.x;
+      const vy = mouse.y - prevMouse.y;
+      prevMouse.x = mouse.x;
+      prevMouse.y = mouse.y;
+
+      // Smooth the velocity vector so the stretch feels organic and doesn't jitter
+      velocity.x += (vx - velocity.x) * 0.35;
+      velocity.y += (vy - velocity.y) * 0.35;
+
+      // Capsule follow position with liquid lag
+      smooth.x += (mouse.x - smooth.x) * 0.2;
+      smooth.y += (mouse.y - smooth.y) * 0.2;
+
+      const speed = Math.hypot(velocity.x, velocity.y);
+      const angle = Math.atan2(velocity.y, velocity.x);
+
+      // Higher multiplier so the bending is clearly visible:
+      // - Stretches outward along motion direction
+      // - Compresses across width to preserve volume
+      // - Instantly drops to 0 when stationary (speed = 0 -> exact circle)
+      const maxStretch = isHover ? 0 : Math.min(speed * 0.045, 0.95);
+      const scaleX = 1 + maxStretch;
+      const scaleY = 1 / (1 + maxStretch * 0.6);
+
+      capsule.style.transform = `translate(${smooth.x}px, ${smooth.y}px) translate(-50%, -50%) rotate(${angle}rad) scale(${scaleX}, ${scaleY})`;
+
+      requestAnimationFrame(render);
+    }
+    requestAnimationFrame(render);
+  })();
+</script>
 </body>
 </html>
